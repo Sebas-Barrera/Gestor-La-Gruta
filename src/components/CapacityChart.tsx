@@ -100,7 +100,7 @@ export function CapacityChart({
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
               <span className="text-sm text-gray-600">Carga Actual</span>
             </div>
             <span className="text-sm font-semibold text-gray-900">

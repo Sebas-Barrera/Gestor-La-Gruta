@@ -45,8 +45,8 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
       <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <ShoppingCart className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Ventas Recientes</h3>
@@ -54,7 +54,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-emerald-600">${totalSales.toLocaleString()}</p>
+            <p className="text-xl font-bold text-blue-600">${totalSales.toLocaleString()}</p>
             <p className="text-xs text-gray-500">{barSales.length} transacciones</p>
           </div>
         </div>
@@ -72,8 +72,8 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
             )}
             style={{ animationDelay: `${index * 80}ms` }}
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-              <Package className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Package className="w-5 h-5 text-blue-600" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -88,7 +88,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
             </div>
 
             <div className="text-right">
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-sm font-semibold text-blue-600">
                 ${sale.total.toLocaleString()}
               </p>
               <div className="flex items-center justify-end gap-1 text-xs text-gray-400">
@@ -112,7 +112,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
       {/* Footer */}
       {barSales.length > 0 && (
         <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-          <button className="w-full flex items-center justify-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+          <button className="w-full flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
             Ver todas las ventas
             <ChevronRight className="w-4 h-4" />
           </button>

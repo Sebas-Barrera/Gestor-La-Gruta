@@ -23,15 +23,15 @@ export function SettingsSection() {
       {/* Profile Header */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
-            <span className="text-2xl font-bold text-emerald-700">JD</span>
+          <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-2xl font-bold text-blue-700">JD</span>
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-gray-900">Juan Doe</h2>
             <p className="text-gray-500">Administrador</p>
             <p className="text-sm text-gray-400 mt-1">juan.doe@barinventory.com</p>
           </div>
-          <Button className="gap-2 bg-emerald-500 hover:bg-emerald-600">
+          <Button className="gap-2 bg-blue-500 hover:bg-blue-600">
             <User className="w-4 h-4" />
             Editar Perfil
           </Button>
@@ -59,7 +59,7 @@ export function SettingsSection() {
             <Switch
               checked={notifications}
               onCheckedChange={setNotifications}
-              className="data-[state=checked]:bg-emerald-500"
+              className="data-[state=checked]:bg-blue-500"
             />
           </div>
 
@@ -75,7 +75,7 @@ export function SettingsSection() {
             <Switch
               checked={emailAlerts}
               onCheckedChange={setEmailAlerts}
-              className="data-[state=checked]:bg-emerald-500"
+              className="data-[state=checked]:bg-blue-500"
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ export function SettingsSection() {
             <Switch
               checked={autoSync}
               onCheckedChange={setAutoSync}
-              className="data-[state=checked]:bg-emerald-500"
+              className="data-[state=checked]:bg-blue-500"
             />
           </div>
 
@@ -122,7 +122,7 @@ export function SettingsSection() {
             <Switch
               checked={darkMode}
               onCheckedChange={setDarkMode}
-              className="data-[state=checked]:bg-emerald-500"
+              className="data-[state=checked]:bg-blue-500"
             />
           </div>
         </div>

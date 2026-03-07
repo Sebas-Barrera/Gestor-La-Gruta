@@ -72,8 +72,8 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
               'flex items-center gap-2 px-4 py-2 rounded-lg border-2 whitespace-nowrap flex-shrink-0',
               'transition-all duration-200',
               selectedBarId === 'all'
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                : 'border-gray-200 hover:border-emerald-300'
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-200 hover:border-blue-300'
             )}
           >
             <Store className="w-4 h-4" />
@@ -88,14 +88,14 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
                 'flex items-center gap-2 px-4 py-2 rounded-lg border-2 whitespace-nowrap flex-shrink-0',
                 'transition-all duration-200',
                 selectedBarId === bar.id
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                  : 'border-gray-200 hover:border-emerald-300'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-blue-300'
               )}
             >
               <div className={cn(
                 'w-2 h-2 rounded-full',
                 bar.outOfStockCount > 0 ? 'bg-red-500' :
-                bar.lowStockCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'
+                bar.lowStockCount > 0 ? 'bg-amber-500' : 'bg-blue-500'
               )} />
               <span className="text-sm font-medium">{bar.name}</span>
               {(bar.lowStockCount > 0 || bar.outOfStockCount > 0) && (
@@ -112,8 +112,8 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={Package}
-          iconBgColor="bg-emerald-100"
-          iconColor="text-emerald-600"
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
           value={selectedBarId === 'all' ? dashboardStats.totalProducts : barStats.find(b => b.id === selectedBarId)?.productCount || 0}
           label={selectedBarId === 'all' ? "Total Productos" : "Productos en Bar"}
           change={dashboardStats.totalProductsChange}
@@ -141,8 +141,8 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
         />
         <StatCard
           icon={TrendingUp}
-          iconBgColor="bg-emerald-100"
-          iconColor="text-emerald-600"
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
           value={`$${(selectedBarId === 'all' ? dashboardStats.todaySales : barStats.find(b => b.id === selectedBarId)?.todaySales || 0).toLocaleString()}`}
           label="Ventas Hoy"
           change={dashboardStats.todaySalesChange}
@@ -205,7 +205,7 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
         <div className="flex flex-wrap gap-3">
           <Button 
             onClick={() => onNavigate('inventory')}
-            className="gap-2 bg-emerald-500 hover:bg-emerald-600"
+            className="gap-2 bg-blue-500 hover:bg-blue-600"
           >
             <Package className="w-4 h-4" />
             Ver Inventario Completo
@@ -213,7 +213,7 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
           <Button 
             variant="outline"
             onClick={() => onNavigate('sales')}
-            className="gap-2 hover:border-emerald-500 hover:text-emerald-600"
+            className="gap-2 hover:border-blue-500 hover:text-blue-600"
           >
             <ShoppingCart className="w-4 h-4" />
             Registrar Venta
@@ -221,7 +221,7 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
           <Button 
             variant="outline"
             onClick={() => onNavigate('bars')}
-            className="gap-2 hover:border-emerald-500 hover:text-emerald-600"
+            className="gap-2 hover:border-blue-500 hover:text-blue-600"
           >
             <Store className="w-4 h-4" />
             Gestionar Bares

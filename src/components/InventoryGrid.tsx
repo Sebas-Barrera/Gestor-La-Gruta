@@ -62,7 +62,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
 
   const statusStyles = {
     empty: 'bg-gray-50 border-gray-200 border-dashed',
-    good: 'bg-emerald-50 border-emerald-200',
+    good: 'bg-blue-50 border-blue-200',
     low: 'bg-amber-50 border-amber-200',
     critical: 'bg-red-50 border-red-200',
   };
@@ -80,7 +80,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
         <h3 className="text-lg font-semibold text-gray-900">Mapa de Inventario</h3>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-200" />
+            <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200" />
             <span className="text-gray-600">Buen stock</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -123,19 +123,33 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
               {slot.product ? (
                 <>
                   {/* Product Icon */}
-                  <div className={cn(
-                    'w-10 h-10 rounded-lg flex items-center justify-center mb-2',
-                    status === 'good' && 'bg-emerald-200',
-                    status === 'low' && 'bg-amber-200',
-                    status === 'critical' && 'bg-red-200',
-                  )}>
-                    <Package className={cn(
-                      'w-5 h-5',
-                      status === 'good' && 'text-emerald-700',
-                      status === 'low' && 'text-amber-700',
-                      status === 'critical' && 'text-red-700',
-                    )} />
-                  </div>
+                  {(() => {
+                    const name = slot.product.name.toLowerCase();
+                    const hasImage = name.includes('coca') || name.includes('cerveza') || name.includes('a. mineral tc');
+                    return (
+                      <div className={cn(
+                        'w-10 h-10 rounded-lg flex items-center justify-center mb-2',
+                        !hasImage && status === 'good' && 'bg-blue-200',
+                        !hasImage && status === 'low' && 'bg-amber-200',
+                        !hasImage && status === 'critical' && 'bg-red-200',
+                      )}>
+                        {name.includes('coca') ? (
+                          <img src="/products/coca355lata.png" alt={slot.product.name} className="w-full h-full object-contain" />
+                        ) : name.includes('cerveza') ? (
+                          <img src="/products/corona355vidrio.png" alt={slot.product.name} className="w-full h-full object-contain" />
+                        ) : name.includes('a. mineral tc') ? (
+                          <img src="/products/aguaMineral355TC.png" alt={slot.product.name} className="w-full h-full object-contain" />
+                        ) : (
+                          <Package className={cn(
+                            'w-5 h-5',
+                            status === 'good' && 'text-blue-700',
+                            status === 'low' && 'text-amber-700',
+                            status === 'critical' && 'text-red-700',
+                          )} />
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Product Info */}
                   <p className="text-xs font-medium text-gray-700 text-center line-clamp-1 px-1">
@@ -145,7 +159,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
                   <div className="flex items-center gap-1 mt-1">
                     <span className={cn(
                       'text-xs font-bold',
-                      status === 'good' && 'text-emerald-600',
+                      status === 'good' && 'text-blue-600',
                       status === 'low' && 'text-amber-600',
                       status === 'critical' && 'text-red-600',
                     )}>
@@ -159,7 +173,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-500',
-                        status === 'good' && 'bg-emerald-500',
+                        status === 'good' && 'bg-blue-500',
                         status === 'low' && 'bg-amber-500',
                         status === 'critical' && 'bg-red-500',
                       )}

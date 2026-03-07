@@ -11,7 +11,7 @@ interface ProductCardProps {
 }
 
 const statusConfig = {
-  in_stock: { label: 'En Stock', className: 'bg-emerald-100 text-emerald-700' },
+  in_stock: { label: 'En Stock', className: 'bg-blue-100 text-blue-700' },
   low_stock: { label: 'Stock Bajo', className: 'bg-amber-100 text-amber-700' },
   out_of_stock: { label: 'Sin Stock', className: 'bg-red-100 text-red-700' },
 };
@@ -69,7 +69,7 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
             <span className={cn(
               'font-medium',
               stockPercentage < 20 ? 'text-red-600' :
-              stockPercentage < 50 ? 'text-amber-600' : 'text-emerald-600'
+              stockPercentage < 50 ? 'text-amber-600' : 'text-blue-600'
             )}>
               {product.stock} / {product.maxStock}
             </span>
@@ -79,7 +79,7 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
               className={cn(
                 'h-full rounded-full transition-all duration-700 ease-out',
                 stockPercentage < 20 ? 'bg-red-500' :
-                stockPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                stockPercentage < 50 ? 'bg-amber-500' : 'bg-blue-500'
               )}
               style={{ 
                 width: isVisible ? `${stockPercentage}%` : '0%',
@@ -109,7 +109,7 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
           disabled={product.status === 'out_of_stock'}
           className={cn(
             'w-full gap-2 transition-all duration-200',
-            'hover:bg-emerald-500 hover:text-white hover:border-emerald-500',
+            'hover:bg-blue-500 hover:text-white hover:border-blue-500',
             product.status === 'out_of_stock' && 'opacity-50 cursor-not-allowed'
           )}
         >

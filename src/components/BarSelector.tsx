@@ -42,8 +42,8 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0 }: BarSe
                 'transition-all duration-300 ease-out',
                 'hover:scale-[1.02] hover:shadow-md',
                 isActive
-                  ? 'border-emerald-500 bg-emerald-50 shadow-emerald-100'
-                  : 'border-gray-200 bg-white hover:border-emerald-300'
+                  ? 'border-blue-500 bg-blue-50 shadow-blue-100'
+                  : 'border-gray-200 bg-white hover:border-blue-300'
               )}
               style={{
                 animationDelay: `${index * 60}ms`,
@@ -52,7 +52,7 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0 }: BarSe
               <div
                 className={cn(
                   'w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300',
-                  isActive ? 'bg-emerald-500' : 'bg-gray-100'
+                  isActive ? 'bg-blue-500' : 'bg-gray-100'
                 )}
               >
                 <Store
@@ -67,7 +67,7 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0 }: BarSe
                 <p
                   className={cn(
                     'text-sm font-semibold transition-colors duration-300',
-                    isActive ? 'text-emerald-700' : 'text-gray-900'
+                    isActive ? 'text-blue-700' : 'text-gray-900'
                   )}
                 >
                   {bar.name}
@@ -76,7 +76,7 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0 }: BarSe
               </div>
               
               {isActive && (
-                <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center animate-in zoom-in duration-200">
+                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-in zoom-in duration-200">
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}

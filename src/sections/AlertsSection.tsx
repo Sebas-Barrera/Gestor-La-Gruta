@@ -10,8 +10,8 @@ export function AlertsSection() {
       {/* Alert Settings */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-emerald-600" />
+          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Configuración de Alertas</h3>
@@ -28,7 +28,7 @@ export function AlertsSection() {
                 <p className="text-xs text-gray-500">En la aplicación</p>
               </div>
             </div>
-            <Switch defaultChecked className="data-[state=checked]:bg-emerald-500" />
+            <Switch defaultChecked className="data-[state=checked]:bg-blue-500" />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -39,7 +39,7 @@ export function AlertsSection() {
                 <p className="text-xs text-gray-500">Alertas por correo</p>
               </div>
             </div>
-            <Switch className="data-[state=checked]:bg-emerald-500" />
+            <Switch className="data-[state=checked]:bg-blue-500" />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -50,7 +50,7 @@ export function AlertsSection() {
                 <p className="text-xs text-gray-500">Cuando llegue a 0</p>
               </div>
             </div>
-            <Switch defaultChecked className="data-[state=checked]:bg-emerald-500" />
+            <Switch defaultChecked className="data-[state=checked]:bg-blue-500" />
           </div>
         </div>
       </div>
@@ -124,7 +124,7 @@ export function AlertsSection() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 hover:bg-emerald-50 hover:border-emerald-500 hover:text-emerald-600"
+                  className="gap-2 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Resolver
@@ -136,8 +136,8 @@ export function AlertsSection() {
 
         {inventoryAlerts.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-8 h-8 text-blue-600" />
             </div>
             <h4 className="text-lg font-medium text-gray-900 mb-1">
               No hay alertas activas

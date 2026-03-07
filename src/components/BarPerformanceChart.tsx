@@ -38,7 +38,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">Hoy</span>
-            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
               En tiempo real
             </span>
           </div>
@@ -56,7 +56,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
               key={bar.id}
               className={cn(
                 'group p-4 rounded-xl border transition-all duration-300',
-                'hover:shadow-md hover:border-emerald-200',
+                'hover:shadow-md hover:border-blue-200',
                 hasIssues ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 bg-gray-50/30'
               )}
               style={{ animationDelay: `${index * 100}ms` }}
@@ -66,11 +66,11 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     'w-10 h-10 rounded-lg flex items-center justify-center',
-                    hasIssues ? 'bg-amber-100' : 'bg-emerald-100'
+                    hasIssues ? 'bg-amber-100' : 'bg-blue-100'
                   )}>
                     <Store className={cn(
                       'w-5 h-5',
-                      hasIssues ? 'text-amber-600' : 'text-emerald-600'
+                      hasIssues ? 'text-amber-600' : 'text-blue-600'
                     )} />
                   </div>
                   <div>
@@ -87,8 +87,8 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
                   <div className="flex items-center justify-end gap-1">
                     {bar.salesTrend > 0 ? (
                       <>
-                        <TrendingUp className="w-3 h-3 text-emerald-500" />
-                        <span className="text-xs text-emerald-600">+{bar.salesTrend}%</span>
+                        <TrendingUp className="w-3 h-3 text-blue-500" />
+                        <span className="text-xs text-blue-600">+{bar.salesTrend}%</span>
                       </>
                     ) : bar.salesTrend < 0 ? (
                       <>
@@ -111,7 +111,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-700 ease-out',
-                      hasIssues ? 'bg-amber-500' : 'bg-emerald-500'
+                      hasIssues ? 'bg-amber-500' : 'bg-blue-500'
                     )}
                     style={{ width: `${salesPercentage}%` }}
                   />
@@ -148,7 +148,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
           <span className="text-gray-500">
             Total: <span className="font-semibold text-gray-900">${bars.reduce((acc, b) => acc + b.todaySales, 0).toLocaleString()}</span>
           </span>
-          <button className="text-emerald-600 hover:text-emerald-700 font-medium">
+          <button className="text-blue-600 hover:text-blue-700 font-medium">
             Ver reporte detallado →
           </button>
         </div>

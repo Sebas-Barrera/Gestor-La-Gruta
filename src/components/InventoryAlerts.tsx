@@ -62,7 +62,7 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, delay = 0 }
         </div>
         <button
           onClick={onViewAll}
-          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 transition-colors duration-200"
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors duration-200"
         >
           Ver todas
           <ChevronRight className="w-4 h-4" />
@@ -180,8 +180,8 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, delay = 0 }
 
         {alerts.length === 0 && (
           <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
-              <Package className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
+              <Package className="w-8 h-8 text-blue-600" />
             </div>
             <p className="text-gray-500 text-sm">No hay alertas de inventario</p>
             <p className="text-gray-400 text-xs mt-1">Todo está bajo control</p>

@@ -91,7 +91,7 @@ export const products: Product[] = [
   {
     id: '6',
     sku: 'JD-750-001',
-    name: 'Jack Daniels 750ml',
+    name: 'A. Mineral TC',
     category: 'Licores',
     subcategory: 'Whisky',
     supplier: 'Brown-Forman',
@@ -193,13 +193,13 @@ export const recentActivities: Activity[] = [
   {
     id: '5',
     type: 'sale',
-    message: 'Venta realizada: 2x Jack Daniels 750ml',
+    message: 'Venta realizada: 2x A. Mineral TC',
     timestamp: '2026-03-06T20:15:00',
     user: 'Carlos López',
     barId: '1',
     barName: 'Bar Central',
     productId: '6',
-    productName: 'Jack Daniels 750ml',
+    productName: 'A. Mineral TC',
   },
   {
     id: '6',
@@ -284,7 +284,7 @@ export const recentSales: Sale[] = [
   {
     id: '3',
     productId: '6',
-    productName: 'Jack Daniels 750ml',
+    productName: 'A. Mineral TC',
     quantity: 1,
     total: 650,
     timestamp: '2026-03-06T20:45:00',

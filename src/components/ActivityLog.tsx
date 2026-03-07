@@ -27,7 +27,7 @@ const iconMap = {
 };
 
 const iconColors = {
-  sale: 'bg-emerald-100 text-emerald-600',
+  sale: 'bg-blue-100 text-blue-600',
   stock_in: 'bg-blue-100 text-blue-600',
   stock_out: 'bg-orange-100 text-orange-600',
   alert: 'bg-red-100 text-red-600',
@@ -81,7 +81,7 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400">Actualizado</span>
-          <span className="text-xs font-medium text-emerald-600">hace 2 min</span>
+          <span className="text-xs font-medium text-blue-600">hace 2 min</span>
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-        <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
           Ver historial completo →
         </button>
       </div>

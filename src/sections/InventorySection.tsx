@@ -69,17 +69,17 @@ export function InventorySection() {
                 placeholder="Buscar por SKU o nombre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64 focus-visible:ring-emerald-500"
+                className="pl-10 w-64 focus-visible:ring-blue-500"
               />
             </div>
 
             {/* Filter */}
-            <Button variant="outline" size="icon" className="hover:border-emerald-500 hover:text-emerald-600">
+            <Button variant="outline" size="icon" className="hover:border-blue-500 hover:text-blue-600">
               <Filter className="w-4 h-4" />
             </Button>
 
             {/* Sort */}
-            <Button variant="outline" className="gap-2 hover:border-emerald-500 hover:text-emerald-600">
+            <Button variant="outline" className="gap-2 hover:border-blue-500 hover:text-blue-600">
               <SlidersHorizontal className="w-4 h-4" />
               Ordenar
             </Button>
@@ -90,7 +90,7 @@ export function InventorySection() {
                 onClick={() => setViewMode('grid')}
                 className={`p-2 transition-colors duration-200 ${
                   viewMode === 'grid' 
-                    ? 'bg-emerald-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-white text-gray-500 hover:bg-gray-50'
                 }`}
               >
@@ -100,7 +100,7 @@ export function InventorySection() {
                 onClick={() => setViewMode('list')}
                 className={`p-2 transition-colors duration-200 ${
                   viewMode === 'list' 
-                    ? 'bg-emerald-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-white text-gray-500 hover:bg-gray-50'
                 }`}
               >

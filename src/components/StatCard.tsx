@@ -99,7 +99,7 @@ export function StatCard({
           <div
             className={cn(
               'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-              isPositive && 'bg-emerald-100 text-emerald-700',
+              isPositive && 'bg-blue-100 text-blue-700',
               isNegative && 'bg-red-100 text-red-700',
               !isPositive && !isNegative && 'bg-gray-100 text-gray-600'
             )}

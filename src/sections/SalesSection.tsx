@@ -17,8 +17,8 @@ export function SalesSection() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <StatCard
           icon={DollarSign}
-          iconBgColor="bg-emerald-100"
-          iconColor="text-emerald-600"
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
           value={`$${totalSales.toLocaleString()}`}
           label="Ventas Totales Hoy"
           change={18}
@@ -60,13 +60,13 @@ export function SalesSection() {
                 placeholder="Buscar venta..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-48 focus-visible:ring-emerald-500"
+                className="pl-10 w-48 focus-visible:ring-blue-500"
               />
             </div>
-            <Button variant="outline" size="icon" className="hover:border-emerald-500 hover:text-emerald-600">
+            <Button variant="outline" size="icon" className="hover:border-blue-500 hover:text-blue-600">
               <Calendar className="w-4 h-4" />
             </Button>
-            <Button variant="outline" className="gap-2 hover:border-emerald-500 hover:text-emerald-600">
+            <Button variant="outline" className="gap-2 hover:border-blue-500 hover:text-blue-600">
               <Download className="w-4 h-4" />
               Exportar
             </Button>
@@ -106,8 +106,8 @@ export function SalesSection() {
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                        <Package className="w-5 h-5 text-emerald-600" />
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-600" />
                       </div>
                       <span className="text-sm font-medium text-gray-900">{sale.productName}</span>
                     </div>
@@ -116,7 +116,7 @@ export function SalesSection() {
                     <span className="text-sm text-gray-900">{sale.quantity} unidades</span>
                   </td>
                   <td className="px-5 py-4">
-                    <span className="text-sm font-semibold text-emerald-600">
+                    <span className="text-sm font-semibold text-blue-600">
                       ${sale.total.toLocaleString()}
                     </span>
                   </td>

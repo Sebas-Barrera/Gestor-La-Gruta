@@ -20,7 +20,7 @@ export function BarsSection() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Gestión de Bares</h2>
-        <Button className="gap-2 bg-emerald-500 hover:bg-emerald-600">
+        <Button className="gap-2 bg-blue-500 hover:bg-blue-600">
           <Plus className="w-4 h-4" />
           Agregar Bar
         </Button>
@@ -39,8 +39,8 @@ export function BarsSection() {
                 'relative text-left p-5 rounded-xl border-2 transition-all duration-300',
                 'hover:shadow-lg hover:-translate-y-1',
                 isActive
-                  ? 'border-emerald-500 bg-emerald-50 shadow-emerald-100'
-                  : 'border-gray-200 bg-white hover:border-emerald-300'
+                  ? 'border-blue-500 bg-blue-50 shadow-blue-100'
+                  : 'border-gray-200 bg-white hover:border-blue-300'
               )}
               style={{ animationDelay: `${index * 100}ms` }}
             >
@@ -53,7 +53,7 @@ export function BarsSection() {
 
               <div className={cn(
                 'w-14 h-14 rounded-xl flex items-center justify-center mb-4',
-                isActive ? 'bg-emerald-500' : 'bg-gray-100'
+                isActive ? 'bg-blue-500' : 'bg-gray-100'
               )}>
                 <Store className={cn(
                   'w-7 h-7',
@@ -63,7 +63,7 @@ export function BarsSection() {
 
               <h3 className={cn(
                 'text-lg font-semibold mb-1',
-                isActive ? 'text-emerald-900' : 'text-gray-900'
+                isActive ? 'text-blue-900' : 'text-gray-900'
               )}>
                 {bar.name}
               </h3>
@@ -78,7 +78,7 @@ export function BarsSection() {
                   <p className="text-xs text-gray-500">Productos</p>
                   <p className={cn(
                     'text-lg font-bold',
-                    isActive ? 'text-emerald-700' : 'text-gray-900'
+                    isActive ? 'text-blue-700' : 'text-gray-900'
                   )}>
                     {barStats.products}
                   </p>
@@ -87,7 +87,7 @@ export function BarsSection() {
                   <p className="text-xs text-gray-500">Ventas Hoy</p>
                   <p className={cn(
                     'text-lg font-bold',
-                    isActive ? 'text-emerald-700' : 'text-gray-900'
+                    isActive ? 'text-blue-700' : 'text-gray-900'
                   )}>
                     {barStats.sales}
                   </p>
@@ -95,7 +95,7 @@ export function BarsSection() {
               </div>
 
               {isActive && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-emerald-500 rounded-full" />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-500 rounded-full" />
               )}
             </button>
           );
@@ -106,7 +106,7 @@ export function BarsSection() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-emerald-500 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center">
               <Store className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -118,7 +118,7 @@ export function BarsSection() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2 hover:border-emerald-500 hover:text-emerald-600">
+            <Button variant="outline" className="gap-2 hover:border-blue-500 hover:text-blue-600">
               <Edit2 className="w-4 h-4" />
               Editar
             </Button>

@@ -12,7 +12,7 @@ interface ProductInfoPanelProps {
 }
 
 const statusConfig = {
-  in_stock: { label: 'En Stock', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  in_stock: { label: 'En Stock', className: 'bg-blue-100 text-blue-700 border-blue-200' },
   low_stock: { label: 'Stock Bajo', className: 'bg-amber-100 text-amber-700 border-amber-200' },
   out_of_stock: { label: 'Sin Stock', className: 'bg-red-100 text-red-700 border-red-200' },
 };
@@ -89,8 +89,8 @@ export function ProductInfoPanel({
 
         {/* Supplier */}
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-6">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-emerald-600" />
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <p className="text-xs text-gray-500">Proveedor</p>
@@ -105,7 +105,7 @@ export function ProductInfoPanel({
             <span className={cn(
               'text-2xl font-bold',
               stockPercentage < 20 ? 'text-red-600' :
-              stockPercentage < 50 ? 'text-amber-600' : 'text-emerald-600'
+              stockPercentage < 50 ? 'text-amber-600' : 'text-blue-600'
             )}>
               {product.stock} <span className="text-sm font-normal text-gray-500">{product.unit}s</span>
             </span>
@@ -116,7 +116,7 @@ export function ProductInfoPanel({
               className={cn(
                 'h-full rounded-full transition-all duration-1000 ease-out',
                 stockPercentage < 20 ? 'bg-red-500' :
-                stockPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                stockPercentage < 50 ? 'bg-amber-500' : 'bg-blue-500'
               )}
               style={{ 
                 width: isVisible ? `${stockPercentage}%` : '0%',
@@ -136,7 +136,7 @@ export function ProductInfoPanel({
           <Button
             variant="outline"
             onClick={onAdjustStock}
-            className="flex-1 gap-2 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 transition-all duration-200"
+            className="flex-1 gap-2 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200"
           >
             <Edit3 className="w-4 h-4" />
             Ajustar Stock
@@ -144,7 +144,7 @@ export function ProductInfoPanel({
           <Button
             variant="outline"
             onClick={onEditProduct}
-            className="flex-1 gap-2 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 transition-all duration-200"
+            className="flex-1 gap-2 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200"
           >
             <Package className="w-4 h-4" />
             Editar Producto

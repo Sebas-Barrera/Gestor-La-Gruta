@@ -54,7 +54,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-center border-b border-gray-100">
-        <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
           <span className="text-white font-bold text-lg">B</span>
         </div>
       </div>
@@ -74,8 +74,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                 'transition-all duration-200 ease-out group relative',
                 'hover:translate-x-1',
                 isActive 
-                  ? 'bg-emerald-50 text-emerald-600 border-l-3 border-emerald-500' 
-                  : 'text-gray-500 hover:text-emerald-600 hover:bg-gray-50'
+                  ? 'bg-blue-50 text-blue-600 border-l-3 border-blue-500' 
+                  : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
               )}
               style={{
                 animationDelay: `${index * 100}ms`,
@@ -110,7 +110,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               )}
               
               {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-500 rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full" />
               )}
             </button>
           );
@@ -127,7 +127,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               onClick={() => item.id === 'logout' && onSectionChange('login')}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-3 rounded-xl',
-                'text-gray-500 hover:text-emerald-600 hover:bg-gray-50',
+                'text-gray-500 hover:text-blue-600 hover:bg-gray-50',
                 'transition-all duration-200 ease-out group',
                 'hover:translate-x-1'
               )}

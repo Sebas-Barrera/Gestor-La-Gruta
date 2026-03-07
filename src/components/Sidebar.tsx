@@ -46,7 +46,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
     <aside
       className={cn(
         'fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-50',
-        'flex flex-col transition-all duration-300 ease-out',
+        'flex flex-col transition-[width] duration-300 ease-out overflow-hidden',
         isExpanded ? 'w-60' : 'w-[72px]'
       )}
       onMouseEnter={() => setIsExpanded(true)}
@@ -70,9 +70,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-xl',
-                'transition-all duration-200 ease-out group relative',
-                'hover:translate-x-1',
+                'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
+                'transition-colors duration-200 ease-out group relative',
                 isActive 
                   ? 'bg-blue-50 text-blue-600 border-l-3 border-blue-500' 
                   : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
@@ -81,22 +80,20 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                 animationDelay: `${index * 100}ms`,
               }}
             >
-              <Icon 
+              <Icon
                 className={cn(
-                  'w-5 h-5 transition-transform duration-200',
+                  'w-5 h-5 shrink-0 transition-transform duration-200',
                   'group-hover:scale-110',
                   isActive && 'scale-110'
-                )} 
+                )}
               />
-              
-              {isExpanded && (
-                <span className={cn(
-                  'text-sm font-medium whitespace-nowrap',
-                  'animate-in fade-in slide-in-from-left-2 duration-200'
-                )}>
-                  {item.label}
-                </span>
-              )}
+
+              <span className={cn(
+                'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
+                isExpanded ? 'opacity-100' : 'opacity-0'
+              )}>
+                {item.label}
+              </span>
               
               {item.badge && (
                 <span className={cn(
@@ -126,18 +123,18 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               key={item.id}
               onClick={() => item.id === 'logout' && onSectionChange('login')}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-xl',
+                'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
                 'text-gray-500 hover:text-blue-600 hover:bg-gray-50',
-                'transition-all duration-200 ease-out group',
-                'hover:translate-x-1'
+                'transition-colors duration-200 ease-out group'
               )}
             >
-              <Icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-              {isExpanded && (
-                <span className="text-sm font-medium whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-200">
-                  {item.label}
-                </span>
-              )}
+              <Icon className="w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              <span className={cn(
+                'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
+                isExpanded ? 'opacity-100' : 'opacity-0'
+              )}>
+                {item.label}
+              </span>
             </button>
           );
         })}

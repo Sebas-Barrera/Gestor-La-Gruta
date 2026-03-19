@@ -1,0 +1,45 @@
+appId: com.lagruta.inventario
+productName: "Inventario La Gruta"
+copyright: "Copyright © 2025 La Gruta"
+
+directories:
+  output: dist-electron-app
+  buildResources: build
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - "!node_modules/**/*"
+
+# ── Windows ──────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: public/favicon.ico
+
+nsis:
+  oneClick: true
+  perMachine: true
+  allowToChangeInstallationDirectory: false
+  installerIcon: public/favicon.ico
+  shortcutName: "Inventario La Gruta"
+
+# ── macOS ────────────────────────────────────────────────────
+mac:
+  target:
+    - target: dmg
+      arch:
+        - universal
+  icon: public/favicon.ico
+  category: public.app-category.business
+
+# ── Linux ────────────────────────────────────────────────────
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: public/favicon.ico
+  category: Office

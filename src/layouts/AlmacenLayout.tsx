@@ -8,7 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 export function AlmacenLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, currentBar, currentUser } = useAuth();
+  const { logout, currentBar } = useAuth();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -33,7 +33,6 @@ export function AlmacenLayout() {
           breadcrumbs={['Inventario']}
           userRole="worker"
           barName={currentBar?.name}
-          userName={currentUser?.name}
         />
 
         <div className="animate-in fade-in duration-300">

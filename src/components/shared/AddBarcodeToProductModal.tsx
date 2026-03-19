@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/shared/FormField';
 import { Link, Search, Package } from 'lucide-react';
-import type { Product, ProductBarcode } from '@/types';
+import type { Product } from '@/types';
 
 /**
  * Datos para crear un nuevo ProductBarcode (asociar barcode a producto existente).

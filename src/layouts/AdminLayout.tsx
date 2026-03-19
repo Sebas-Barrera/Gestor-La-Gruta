@@ -18,7 +18,7 @@ const sectionMap: Record<string, string> = {
 export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, currentUser } = useAuth();
+  const { logout } = useAuth();
 
   useEffect(() => {
     window.scrollTo(0, 0);

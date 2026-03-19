@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Plus, Package, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProductImage } from '@/components/shared/ProductImage';
 import type { Product } from '@/types';
 
 interface InventorySlot {
@@ -13,7 +14,8 @@ interface InventorySlot {
 
 interface InventoryGridProps {
   products: Product[];
-  onSlotClick: (slotId: string) => void;
+  /** Callback al hacer click en un slot. Recibe el ID del slot y el producto asignado (si existe) */
+  onSlotClick: (slotId: string, product?: Product) => void;
   delay?: number;
 }
 
@@ -104,7 +106,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
           return (
             <button
               key={slot.id}
-              onClick={() => onSlotClick(slot.id)}
+              onClick={() => onSlotClick(slot.id, slot.product)}
               className={cn(
                 'relative aspect-square rounded-xl border-2 p-3',
                 'flex flex-col items-center justify-center',
@@ -123,33 +125,7 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
               {slot.product ? (
                 <>
                   {/* Product Icon */}
-                  {(() => {
-                    const name = slot.product.name.toLowerCase();
-                    const hasImage = name.includes('coca') || name.includes('cerveza') || name.includes('a. mineral tc');
-                    return (
-                      <div className={cn(
-                        'w-10 h-10 rounded-lg flex items-center justify-center mb-2',
-                        !hasImage && status === 'good' && 'bg-blue-200',
-                        !hasImage && status === 'low' && 'bg-amber-200',
-                        !hasImage && status === 'critical' && 'bg-red-200',
-                      )}>
-                        {name.includes('coca') ? (
-                          <img src="/products/coca355lata.png" alt={slot.product.name} className="w-full h-full object-contain" />
-                        ) : name.includes('cerveza') ? (
-                          <img src="/products/corona355vidrio.png" alt={slot.product.name} className="w-full h-full object-contain" />
-                        ) : name.includes('a. mineral tc') ? (
-                          <img src="/products/aguaMineral355TC.png" alt={slot.product.name} className="w-full h-full object-contain" />
-                        ) : (
-                          <Package className={cn(
-                            'w-5 h-5',
-                            status === 'good' && 'text-blue-700',
-                            status === 'low' && 'text-amber-700',
-                            status === 'critical' && 'text-red-700',
-                          )} />
-                        )}
-                      </div>
-                    );
-                  })()}
+                  <ProductImage product={slot.product} size="md" className="mb-2" />
 
                   {/* Product Info */}
                   <p className="text-xs font-medium text-gray-700 text-center line-clamp-1 px-1">
@@ -163,9 +139,14 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
                       status === 'low' && 'text-amber-600',
                       status === 'critical' && 'text-red-600',
                     )}>
-                      {slot.current}
+                      {slot.product?.isWeightBased ? slot.current.toFixed(1) : slot.current}
                     </span>
-                    <span className="text-xs text-gray-400">/{slot.capacity}</span>
+                    <span className="text-xs text-gray-400">
+                      {slot.product?.isWeightBased
+                        ? (slot.product.weightUnit || slot.product.unit)
+                        : `/${slot.capacity}`
+                      }
+                    </span>
                   </div>
 
                   {/* Mini Progress */}

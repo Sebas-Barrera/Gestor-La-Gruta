@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { 
-  Home, 
-  Package, 
-  ShoppingCart, 
-  Store, 
-  BarChart3, 
-  Bell, 
-  Settings, 
-  HelpCircle, 
+import {
+  Home,
+  Package,
+  Store,
+  BarChart3,
+  ClipboardList,
+  Bell,
+  Settings,
+  HelpCircle,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { UserRole } from '@/types/auth';
 
 interface NavItem {
   icon: React.ElementType;
@@ -19,28 +20,36 @@ interface NavItem {
   badge?: number;
 }
 
-const navItems: NavItem[] = [
+const adminNavItems: NavItem[] = [
   { icon: Home, label: 'Dashboard', id: 'dashboard' },
   { icon: Package, label: 'Inventario', id: 'inventory' },
-  { icon: ShoppingCart, label: 'Ventas', id: 'sales' },
   { icon: Store, label: 'Bares', id: 'bars' },
   { icon: BarChart3, label: 'Reportes', id: 'reports' },
+  { icon: ClipboardList, label: 'Historial', id: 'history' },
   { icon: Bell, label: 'Alertas', id: 'alerts', badge: 3 },
   { icon: Settings, label: 'Configuración', id: 'settings' },
 ];
 
-const bottomItems: NavItem[] = [
-  { icon: HelpCircle, label: 'Ayuda', id: 'help' },
-  { icon: LogOut, label: 'Cerrar Sesión', id: 'logout' },
+const workerNavItems: NavItem[] = [
+  { icon: Package, label: 'Inventario', id: 'inventory' },
 ];
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  role?: UserRole;
+  onLogout?: () => void;
 }
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const navItems = role === 'worker' ? workerNavItems : adminNavItems;
+
+  const bottomItems: NavItem[] = [
+    ...(role === 'admin' ? [{ icon: HelpCircle, label: 'Ayuda', id: 'help' }] : []),
+    { icon: LogOut, label: 'Cerrar Sesión', id: 'logout' },
+  ];
 
   return (
     <aside
@@ -64,7 +73,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
         {navItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
-          
+
           return (
             <button
               key={item.id}
@@ -72,8 +81,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
                 'transition-colors duration-200 ease-out group relative',
-                isActive 
-                  ? 'bg-blue-50 text-blue-600 border-l-3 border-blue-500' 
+                isActive
+                  ? 'bg-blue-50 text-blue-600 border-l-3 border-blue-500'
                   : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
               )}
               style={{
@@ -94,7 +103,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               )}>
                 {item.label}
               </span>
-              
+
               {item.badge && (
                 <span className={cn(
                   'absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs',
@@ -105,7 +114,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
                   {item.badge}
                 </span>
               )}
-              
+
               {isActive && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full" />
               )}
@@ -121,7 +130,11 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => item.id === 'logout' && onSectionChange('login')}
+              onClick={() => {
+                if (item.id === 'logout' && onLogout) {
+                  onLogout();
+                }
+              }}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
                 'text-gray-500 hover:text-blue-600 hover:bg-gray-50',

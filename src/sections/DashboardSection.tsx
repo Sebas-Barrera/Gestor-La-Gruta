@@ -1,27 +1,24 @@
 import { useState } from 'react';
-import { 
-  Package, 
-  DollarSign, 
-  AlertTriangle, 
-  TrendingUp, 
+import { useNavigate } from 'react-router-dom';
+import {
+  Package,
+  DollarSign,
+  AlertTriangle,
+  TrendingUp,
   Store,
-  ShoppingCart
 } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
-import { CapacityChart } from '@/components/CapacityChart';
+// import { CapacityChart } from '@/components/CapacityChart';
 import { ActivityLog } from '@/components/ActivityLog';
 import { InventoryAlerts } from '@/components/InventoryAlerts';
 import { BarPerformanceChart } from '@/components/BarPerformanceChart';
 import { RecentSalesByBar } from '@/components/RecentSalesByBar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { dashboardStats, recentActivities, inventoryAlerts, bars, products, recentSales } from '@/data/mockData';
 
-interface DashboardSectionProps {
-  onNavigate: (section: string) => void;
-}
-
-export function DashboardSection({ onNavigate }: DashboardSectionProps) {
+export function DashboardSection() {
+  const nav = useNavigate();
+  const onNavigate = (section: string, params?: string) => nav(`/admin/${section}${params || ''}`);
   const [selectedBarId, setSelectedBarId] = useState<string | 'all'>('all');
 
   // Calcular estadísticas por bar
@@ -144,7 +141,7 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
           iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
           value={`$${(selectedBarId === 'all' ? dashboardStats.todaySales : barStats.find(b => b.id === selectedBarId)?.todaySales || 0).toLocaleString()}`}
-          label="Ventas Hoy"
+          label="Salidas Hoy"
           change={dashboardStats.todaySalesChange}
           changeLabel="vs ayer"
           delay={300}
@@ -153,18 +150,22 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
 
       {/* Bar Performance Overview */}
       {selectedBarId === 'all' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <BarPerformanceChart bars={barStats} delay={400} />
-          </div>
+        <div className="grid grid-cols-1 gap-6">
           <div>
+            <BarPerformanceChart
+              bars={barStats}
+              onViewReport={() => onNavigate('inventory')}
+              delay={400}
+            />
+          </div>
+          {/* <div>
             <CapacityChart
               percentage={68}
               currentLoad={850}
               maxCapacity={1250}
               delay={500}
             />
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -176,15 +177,19 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
             alerts={filteredAlerts}
             bars={bars}
             products={products}
-            onViewAll={() => onNavigate('alerts')}
+            onViewAll={() => onNavigate('alerts', selectedBarId !== 'all' ? `?bar=${selectedBarId}` : '')}
+            onAlertClick={() => {
+              onNavigate('alerts', selectedBarId !== 'all' ? `?bar=${selectedBarId}` : '');
+            }}
             delay={600}
           />
           
           {selectedBarId !== 'all' && (
-            <RecentSalesByBar 
-              barId={selectedBarId} 
+            <RecentSalesByBar
+              barId={selectedBarId}
               barName={bars.find(b => b.id === selectedBarId)?.name || ''}
-              delay={650} 
+              onViewAll={() => onNavigate('reports')}
+              delay={650}
             />
           )}
         </div>
@@ -194,40 +199,12 @@ export function DashboardSection({ onNavigate }: DashboardSectionProps) {
           <ActivityLog
             activities={filteredActivities}
             bars={bars}
+            onViewAll={() => onNavigate('reports', selectedBarId !== 'all' ? `?bar=${selectedBarId}` : '')}
             delay={700}
           />
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Acciones Rápidas</h3>
-        <div className="flex flex-wrap gap-3">
-          <Button 
-            onClick={() => onNavigate('inventory')}
-            className="gap-2 bg-blue-500 hover:bg-blue-600"
-          >
-            <Package className="w-4 h-4" />
-            Ver Inventario Completo
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => onNavigate('sales')}
-            className="gap-2 hover:border-blue-500 hover:text-blue-600"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Registrar Venta
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => onNavigate('bars')}
-            className="gap-2 hover:border-blue-500 hover:text-blue-600"
-          >
-            <Store className="w-4 h-4" />
-            Gestionar Bares
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,175 +1,199 @@
-import { useState } from 'react';
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  Database, 
-  ChevronRight,
-  Mail,
-  Moon,
-  Sun
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { useState } from "react";
+import { User, Database, Bell, Settings, Clock, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminManagement } from "@/hooks/useAdminManagement";
+import { EditProfileModal } from "@/components/settings/EditProfileModal";
+import { AdminAccountsSection } from "@/components/settings/AdminAccountsSection";
+import { toast } from "sonner";
+import type { AdminAccount } from "@/types";
 
 export function SettingsSection() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const { currentUser, updateProfile } = useAuth();
+  const { admins, addAdmin, updateAdmin, deleteAdmin } = useAdminManagement();
+
   const [emailAlerts, setEmailAlerts] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  const initials =
+    currentUser?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "AD";
+
+  const handleProfileSave = (data: { name: string; phone?: string }) => {
+    updateProfile(data);
+    toast.success("Perfil actualizado", {
+      description: "Los cambios se guardaron correctamente.",
+    });
+  };
+
+  const handleAddAdmin = (data: Omit<AdminAccount, "id" | "createdAt">) => {
+    addAdmin(data);
+    toast.success("Administrador creado", {
+      description: `La cuenta de "${data.name}" fue creada exitosamente.`,
+    });
+  };
+
+  const handleUpdateAdmin = (
+    id: string,
+    data: Omit<AdminAccount, "id" | "createdAt">,
+  ) => {
+    updateAdmin(id, data);
+    toast.success("Administrador actualizado", {
+      description: "Los cambios se guardaron correctamente.",
+    });
+  };
+
+  const handleDeleteAdmin = (id: string) => {
+    deleteAdmin(id);
+    toast.success("Administrador eliminado", {
+      description: "La cuenta fue eliminada.",
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
+      {/* Page Title */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Administra las preferencias de tu cuenta y del sistema
+        </p>
+      </div>
+
       {/* Profile Header */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-2xl font-bold text-blue-700">JD</span>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">Juan Doe</h2>
-            <p className="text-gray-500">Administrador</p>
-            <p className="text-sm text-gray-400 mt-1">juan.doe@barinventory.com</p>
-          </div>
-          <Button className="gap-2 bg-blue-500 hover:bg-blue-600">
-            <User className="w-4 h-4" />
-            Editar Perfil
-          </Button>
-        </div>
-      </div>
-
-      {/* Notifications Group */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-            Notificaciones
-          </h3>
-        </div>
-
-        <div className="divide-y divide-gray-100">
-          {/* Push Notifications */}
-          <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Bell className="w-5 h-5 text-gray-500" />
+        <div className="h-24 bg-white" />
+        <div className="px-6 pb-6">
+          <div className="flex items-end gap-5 -mt-10">
+            <div className="w-20 h-20 rounded-xl bg-white border-4 border-white shadow-md flex items-center justify-center">
+              <span className="text-2xl font-bold text-blue-600">
+                {initials}
+              </span>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Notificaciones Push</p>
-              <p className="text-xs text-gray-500">Recibir alertas en la aplicación</p>
+            <div className="flex-1 pt-3">
+              <h2 className="text-xl font-bold text-gray-900">
+                {currentUser?.name ?? "Admin"}
+              </h2>
+              <p className="text-sm text-gray-500">Administrador</p>
             </div>
-            <Switch
-              checked={notifications}
-              onCheckedChange={setNotifications}
-              className="data-[state=checked]:bg-blue-500"
-            />
+            <Button
+              onClick={() => setProfileModalOpen(true)}
+              className="gap-2 bg-blue-500 hover:bg-blue-600"
+            >
+              <User className="w-4 h-4" />
+              Editar Perfil
+            </Button>
           </div>
-
-          {/* Email Alerts */}
-          <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Mail className="w-5 h-5 text-gray-500" />
+          <div className="mt-4 flex items-center gap-6 text-sm text-gray-500">
+            {currentUser?.phone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-4 h-4" />
+                {currentUser.phone}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
+              Último acceso: hoy
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Alertas por Email</p>
-              <p className="text-xs text-gray-500">Recibir alertas de inventario por correo</p>
-            </div>
-            <Switch
-              checked={emailAlerts}
-              onCheckedChange={setEmailAlerts}
-              className="data-[state=checked]:bg-blue-500"
-            />
           </div>
         </div>
       </div>
 
-      {/* System Group */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-            Sistema
-          </h3>
-        </div>
-
-        <div className="divide-y divide-gray-100">
-          {/* Auto Sync */}
-          <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Database className="w-5 h-5 text-gray-500" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Sincronización Automática</p>
-              <p className="text-xs text-gray-500">Sincronizar datos en tiempo real</p>
-            </div>
-            <Switch
-              checked={autoSync}
-              onCheckedChange={setAutoSync}
-              className="data-[state=checked]:bg-blue-500"
-            />
+      {/* Settings Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Notifications Group */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+              Notificaciones
+            </h3>
           </div>
 
-          {/* Dark Mode */}
-          <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              {darkMode ? (
-                <Moon className="w-5 h-5 text-gray-500" />
-              ) : (
-                <Sun className="w-5 h-5 text-gray-500" />
-              )}
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-5 h-5 text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">
+                  Alertas por Email
+                </p>
+                <p className="text-xs text-gray-500">
+                  Recibir alertas de inventario por correo
+                </p>
+              </div>
+              <Switch
+                checked={emailAlerts}
+                onCheckedChange={setEmailAlerts}
+                className="data-[state=checked]:bg-blue-500"
+              />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Modo Oscuro</p>
-              <p className="text-xs text-gray-500">Cambiar entre tema claro y oscuro</p>
-            </div>
-            <Switch
-              checked={darkMode}
-              onCheckedChange={setDarkMode}
-              className="data-[state=checked]:bg-blue-500"
-            />
           </div>
         </div>
-      </div>
 
-      {/* Security Group */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-            Seguridad
-          </h3>
-        </div>
+        {/* System Group */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+            <Settings className="w-4 h-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+              Sistema
+            </h3>
+          </div>
 
-        <div className="divide-y divide-gray-100">
-          {/* Security */}
-          <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <Shield className="w-5 h-5 text-gray-500" />
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                <Database className="w-5 h-5 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">
+                  Sincronización Automática
+                </p>
+                <p className="text-xs text-gray-500">
+                  Sincronizar datos en tiempo real
+                </p>
+              </div>
+              <Switch
+                checked={autoSync}
+                onCheckedChange={setAutoSync}
+                className="data-[state=checked]:bg-blue-500"
+              />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Seguridad de la Cuenta</p>
-              <p className="text-xs text-gray-500">Contraseña, autenticación de dos factores</p>
-            </div>
-            <button className="p-2 rounded-lg hover:bg-gray-200 transition-colors">
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Danger Zone */}
-      <div className="bg-red-50 rounded-xl border border-red-200 p-6">
-        <h3 className="text-sm font-semibold text-red-700 uppercase tracking-wider mb-4">
-          Zona de Peligro
-        </h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-red-900">Eliminar Cuenta</p>
-            <p className="text-xs text-red-600">
-              Esta acción no se puede deshacer. Se eliminarán todos tus datos.
-            </p>
-          </div>
-          <Button variant="destructive" size="sm">
-            Eliminar
-          </Button>
-        </div>
+      {/* Admin Accounts Management */}
+      <AdminAccountsSection
+        admins={admins}
+        currentAdminId={currentUser?.id ?? ""}
+        onAddAdmin={handleAddAdmin}
+        onUpdateAdmin={handleUpdateAdmin}
+        onDeleteAdmin={handleDeleteAdmin}
+      />
+
+      {/* App Info */}
+      <div className="text-center text-xs text-gray-400 pt-2">
+        La Gruta | Almacén v1.0.0
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        open={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onSave={handleProfileSave}
+        profile={{
+          name: currentUser?.name ?? "",
+          phone: currentUser?.phone,
+        }}
+      />
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { 
-  ShoppingCart, 
-  Package, 
-  AlertTriangle, 
-  User, 
+import {
+  Package,
+  AlertTriangle,
+  User,
   Clipboard,
   Clock,
   Store
@@ -14,11 +13,14 @@ import type { Activity, Bar } from '@/types';
 interface ActivityLogProps {
   activities: Activity[];
   bars: Bar[];
+  /** Callback al hacer click en "Ver historial completo". Backend: GET /api/activities?limit=all */
+  onViewAll?: () => void;
+  /** Máximo de actividades visibles. Default: 10 */
+  maxItems?: number;
   delay?: number;
 }
 
 const iconMap = {
-  sale: ShoppingCart,
   stock_in: Package,
   stock_out: Package,
   alert: AlertTriangle,
@@ -27,7 +29,6 @@ const iconMap = {
 };
 
 const iconColors = {
-  sale: 'bg-blue-100 text-blue-600',
   stock_in: 'bg-blue-100 text-blue-600',
   stock_out: 'bg-orange-100 text-orange-600',
   alert: 'bg-red-100 text-red-600',
@@ -46,7 +47,9 @@ function formatRelativeTime(timestamp: string): string {
   return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
 }
 
-export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
+export function ActivityLog({ activities, bars, onViewAll, maxItems = 10, delay = 0 }: ActivityLogProps) {
+  const displayedActivities = activities.slice(0, maxItems);
+  const hasMore = activities.length > maxItems;
   const [isVisible, setIsVisible] = useState(false);
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
 
@@ -58,12 +61,12 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
   useEffect(() => {
     if (!isVisible) return;
 
-    activities.forEach((_, index) => {
+    displayedActivities.forEach((_, index) => {
       setTimeout(() => {
         setVisibleItems(prev => [...prev, index]);
       }, 200 + index * 80);
     });
-  }, [isVisible, activities]);
+  }, [isVisible, displayedActivities]);
 
   return (
     <div
@@ -77,12 +80,21 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Registro de Actividad</h3>
-          <p className="text-sm text-gray-500">Movimientos en tiempo real de todos los bares</p>
+          <p className="text-sm text-gray-500">
+            {hasMore
+              ? `Últimos ${maxItems} movimientos`
+              : 'Movimientos en tiempo real'
+            }
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">Actualizado</span>
-          <span className="text-xs font-medium text-blue-600">hace 2 min</span>
-        </div>
+        {displayedActivities.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">Última actividad</span>
+            <span className="text-xs font-medium text-blue-600">
+              {formatRelativeTime(displayedActivities[0].timestamp)}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -91,7 +103,7 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
           <div className="absolute left-6 top-0 bottom-0 w-px bg-gray-200" />
 
           <div className="space-y-3">
-            {activities.map((activity, index) => {
+            {displayedActivities.map((activity, index) => {
               const Icon = iconMap[activity.type];
               const iconColorClass = iconColors[activity.type];
               const isItemVisible = visibleItems.includes(index);
@@ -162,11 +174,21 @@ export function ActivityLog({ activities, bars, delay = 0 }: ActivityLogProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-          Ver historial completo →
-        </button>
-      </div>
+      {onViewAll && (
+        <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+          <button
+            onClick={onViewAll}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+          >
+            Ver historial completo →
+          </button>
+          {hasMore && (
+            <span className="text-xs text-gray-400">
+              +{activities.length - maxItems} más
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

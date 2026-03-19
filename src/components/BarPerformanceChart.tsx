@@ -5,10 +5,12 @@ import type { BarStats } from '@/types';
 
 interface BarPerformanceChartProps {
   bars: BarStats[];
+  /** Callback al hacer click en "Ver reporte detallado". Backend: GET /api/reports/bars */
+  onViewReport?: () => void;
   delay?: number;
 }
 
-export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProps) {
+export function BarPerformanceChart({ bars, onViewReport, delay = 0 }: BarPerformanceChartProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
     return () => clearTimeout(timer);
   }, [delay]);
 
-  // Ordenar por ventas (descendente)
+  // Ordenar por salidas (descendente)
   const sortedBars = [...bars].sort((a, b) => b.todaySales - a.todaySales);
   const maxSales = Math.max(...bars.map(b => b.todaySales));
 
@@ -34,7 +36,7 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Rendimiento por Bar</h3>
-            <p className="text-sm text-gray-500">Comparación de ventas e inventario</p>
+            <p className="text-sm text-gray-500">Comparación de salidas e inventario</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">Hoy</span>
@@ -148,7 +150,10 @@ export function BarPerformanceChart({ bars, delay = 0 }: BarPerformanceChartProp
           <span className="text-gray-500">
             Total: <span className="font-semibold text-gray-900">${bars.reduce((acc, b) => acc + b.todaySales, 0).toLocaleString()}</span>
           </span>
-          <button className="text-blue-600 hover:text-blue-700 font-medium">
+          <button
+            onClick={onViewReport}
+            className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+          >
             Ver reporte detallado →
           </button>
         </div>

@@ -1,71 +1,71 @@
-import { Eye, Plus, Bell, Settings, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell, Settings, ChevronRight, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { UserRole } from '@/types/auth';
 
 interface HeaderProps {
   breadcrumbs: string[];
-  onAddProduct: () => void;
-  onViewReport: () => void;
+  barName?: string;
+  userRole?: UserRole;
+  onSectionChange?: (section: string) => void;
 }
 
-export function Header({ breadcrumbs, onAddProduct, onViewReport }: HeaderProps) {
+export function Header({ breadcrumbs, barName, userRole = 'admin', onSectionChange }: HeaderProps) {
   return (
     <header className="h-16 bg-gray-50 border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-40">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2">
-        {breadcrumbs.map((crumb, index) => (
-          <div key={index} className="flex items-center gap-2">
-            {index > 0 && (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            )}
-            <span
-              className={cn(
-                'text-sm transition-colors duration-200',
-                index === breadcrumbs.length - 1
-                  ? 'text-blue-600 font-medium'
-                  : 'text-gray-500 hover:text-gray-700 cursor-pointer'
-              )}
-            >
-              {crumb}
-            </span>
+      {/* Left: Breadcrumbs or Bar Name */}
+      <div className="flex items-center gap-4">
+        {userRole === 'worker' && barName ? (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+              <Store className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900 leading-tight">{barName}</h2>
+              <p className="text-xs text-gray-500">Almacén</p>
+            </div>
           </div>
-        ))}
-      </nav>
+        ) : (
+          <nav className="flex items-center gap-2">
+            {breadcrumbs.map((crumb, index) => (
+              <div key={index} className="flex items-center gap-2">
+                {index > 0 && (
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                )}
+                <span
+                  className={cn(
+                    'text-sm transition-colors duration-200',
+                    index === breadcrumbs.length - 1
+                      ? 'text-blue-600 font-medium'
+                      : 'text-gray-500 hover:text-gray-700 cursor-pointer'
+                  )}
+                >
+                  {crumb}
+                </span>
+              </div>
+            ))}
+          </nav>
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onViewReport}
-          className="gap-2 text-gray-700 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200"
-        >
-          <Eye className="w-4 h-4" />
-          Ver Reporte
-        </Button>
-        
-        <Button
-          size="sm"
-          onClick={onAddProduct}
-          className="gap-2 bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 transition-all duration-200 hover:scale-[1.02]"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar Producto
-        </Button>
-
-        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200">
-          <button className="relative p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onSectionChange?.('alerts')}
+            className="relative p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110"
+          >
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           </button>
-          
-          <button className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110">
-            <Settings className="w-5 h-5" />
-          </button>
-          
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center ml-2 cursor-pointer hover:ring-2 hover:ring-blue-500/30 transition-all duration-200">
-            <span className="text-blue-700 font-semibold text-sm">JD</span>
-          </div>
+
+          {userRole === 'admin' && (
+            <button
+              onClick={() => onSectionChange?.('settings')}
+              className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

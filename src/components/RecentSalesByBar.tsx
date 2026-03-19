@@ -6,10 +6,11 @@ import { recentSales } from '@/data/mockData';
 interface RecentSalesByBarProps {
   barId: string;
   barName: string;
+  onViewAll?: () => void;
   delay?: number;
 }
 
-export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBarProps) {
+export function RecentSalesByBar({ barId, barName, onViewAll, delay = 0 }: RecentSalesByBarProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
     return () => clearTimeout(timer);
   }, [delay]);
 
-  // Filtrar ventas por bar
+  // Filtrar salidas por bar
   const barSales = recentSales.filter(s => s.barId === barId).slice(0, 5);
   const totalSales = barSales.reduce((acc, s) => acc + s.total, 0);
 
@@ -49,7 +50,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
               <ShoppingCart className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Ventas Recientes</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Salidas Recientes</h3>
               <p className="text-sm text-gray-500">{barName}</p>
             </div>
           </div>
@@ -104,7 +105,7 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
             <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <ShoppingCart className="w-7 h-7 text-gray-400" />
             </div>
-            <p className="text-gray-500 text-sm">Sin ventas recientes</p>
+            <p className="text-gray-500 text-sm">Sin salidas recientes</p>
           </div>
         )}
       </div>
@@ -112,8 +113,8 @@ export function RecentSalesByBar({ barId, barName, delay = 0 }: RecentSalesByBar
       {/* Footer */}
       {barSales.length > 0 && (
         <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-          <button className="w-full flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
-            Ver todas las ventas
+          <button onClick={onViewAll} className="w-full flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
+            Ver todas las salidas
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

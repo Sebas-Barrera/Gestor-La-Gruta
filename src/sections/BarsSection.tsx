@@ -1,18 +1,67 @@
 import { useState } from 'react';
-import { Store, Plus, MapPin, Users, Package, TrendingUp, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Store, Plus, MapPin, Users, Package, TrendingUp, Edit2, Trash2, Info, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { bars, products } from '@/data/mockData';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useBarManagement } from '@/hooks/useBarManagement';
+import { BarFormModal } from '@/components/bars/BarFormModal';
+import { BarInfoTab } from '@/components/bars/BarInfoTab';
+import { BarPersonalTab } from '@/components/bars/BarPersonalTab';
+import { BarCredentialsTab } from '@/components/bars/BarCredentialsTab';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
+import { products } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import type { Bar } from '@/types';
 
 export function BarsSection() {
-  const [activeBar, setActiveBar] = useState(bars[0]);
+  const {
+    bars,
+    workers,
+    credentials,
+    addBar,
+    updateBar,
+    deleteBar,
+    addWorker,
+    updateWorker,
+    deleteWorker,
+    addCredential,
+    updateCredential,
+    deleteCredential,
+  } = useBarManagement();
 
-  // Mock stats for each bar
-  const barStats = {
-    products: products.length,
-    value: 45230,
-    sales: 156,
-    staff: 8,
+  const [selectedBarId, setSelectedBarId] = useState(bars[0]?.id ?? '');
+  const [barFormOpen, setBarFormOpen] = useState(false);
+  const [editingBar, setEditingBar] = useState<Bar | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<Bar | null>(null);
+
+  const selectedBar = bars.find(b => b.id === selectedBarId);
+
+  const getBarStats = (barId: string) => {
+    const barProducts = products.filter(p => p.barId === barId);
+    const barWorkers = workers.filter(w => w.barIds.includes(barId));
+    return {
+      productCount: barProducts.length,
+      inventoryValue: barProducts.reduce((sum, p) => sum + p.stock * p.price, 0),
+      workerCount: barWorkers.length,
+    };
+  };
+
+  const handleSaveBar = (data: Omit<Bar, 'id'>) => {
+    if (editingBar) {
+      updateBar(editingBar.id, data);
+    } else {
+      const newBar = addBar(data);
+      setSelectedBarId(newBar.id);
+    }
+    setEditingBar(undefined);
+  };
+
+  const handleDeleteBar = () => {
+    if (!deleteTarget) return;
+    deleteBar(deleteTarget.id);
+    setDeleteTarget(null);
+    if (selectedBarId === deleteTarget.id) {
+      setSelectedBarId(bars.find(b => b.id !== deleteTarget.id)?.id ?? '');
+    }
   };
 
   return (
@@ -20,7 +69,10 @@ export function BarsSection() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Gestión de Bares</h2>
-        <Button className="gap-2 bg-blue-500 hover:bg-blue-600">
+        <Button
+          onClick={() => { setEditingBar(undefined); setBarFormOpen(true); }}
+          className="gap-2 bg-blue-500 hover:bg-blue-600"
+        >
           <Plus className="w-4 h-4" />
           Agregar Bar
         </Button>
@@ -29,12 +81,13 @@ export function BarsSection() {
       {/* Bars Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {bars.map((bar, index) => {
-          const isActive = bar.id === activeBar.id;
+          const isActive = bar.id === selectedBarId;
+          const stats = getBarStats(bar.id);
 
           return (
             <button
               key={bar.id}
-              onClick={() => setActiveBar(bar)}
+              onClick={() => setSelectedBarId(bar.id)}
               className={cn(
                 'relative text-left p-5 rounded-xl border-2 transition-all duration-300',
                 'hover:shadow-lg hover:-translate-y-1',
@@ -44,13 +97,6 @@ export function BarsSection() {
               )}
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              {/* Actions Menu */}
-              <div className="absolute top-3 right-3">
-                <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                  <MoreVertical className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-
               <div className={cn(
                 'w-14 h-14 rounded-xl flex items-center justify-center mb-4',
                 isActive ? 'bg-blue-500' : 'bg-gray-100'
@@ -80,16 +126,16 @@ export function BarsSection() {
                     'text-lg font-bold',
                     isActive ? 'text-blue-700' : 'text-gray-900'
                   )}>
-                    {barStats.products}
+                    {stats.productCount}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Ventas Hoy</p>
+                  <p className="text-xs text-gray-500">Personal</p>
                   <p className={cn(
                     'text-lg font-bold',
                     isActive ? 'text-blue-700' : 'text-gray-900'
                   )}>
-                    {barStats.sales}
+                    {stats.workerCount}
                   </p>
                 </div>
               </div>
@@ -103,67 +149,137 @@ export function BarsSection() {
       </div>
 
       {/* Selected Bar Details */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center">
-              <Store className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">{activeBar.name}</h3>
-              <div className="flex items-center gap-2 text-gray-500">
-                <MapPin className="w-4 h-4" />
-                {activeBar.location}
+      {selectedBar && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-xl bg-blue-500 flex items-center justify-center">
+                <Store className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{selectedBar.name}</h3>
+                <div className="flex items-center gap-2 text-gray-500">
+                  <MapPin className="w-4 h-4" />
+                  {selectedBar.location}
+                </div>
               </div>
             </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="gap-2 hover:border-blue-500 hover:text-blue-600"
+                onClick={() => { setEditingBar(selectedBar); setBarFormOpen(true); }}
+              >
+                <Edit2 className="w-4 h-4" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:bg-red-50 hover:border-red-300"
+                onClick={() => setDeleteTarget(selectedBar)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2 hover:border-blue-500 hover:text-blue-600">
-              <Edit2 className="w-4 h-4" />
-              Editar
-            </Button>
-            <Button variant="outline" className="gap-2 text-red-600 hover:bg-red-50 hover:border-red-300">
-              <Trash2 className="w-4 h-4" />
-              Eliminar
-            </Button>
-          </div>
+
+          {/* Stats Summary */}
+          {(() => {
+            const stats = getBarStats(selectedBar.id);
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2 text-gray-500 mb-2">
+                    <Package className="w-4 h-4" />
+                    <span className="text-sm">Productos</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{stats.productCount}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2 text-gray-500 mb-2">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="text-sm">Valor Inventario</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">${stats.inventoryValue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2 text-gray-500 mb-2">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm">Personal</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{stats.workerCount}</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Tabs */}
+          <Tabs defaultValue="info">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="info" className="gap-1.5">
+                <Info className="w-4 h-4" />
+                Información
+              </TabsTrigger>
+              <TabsTrigger value="personal" className="gap-1.5">
+                <Users className="w-4 h-4" />
+                Personal
+              </TabsTrigger>
+              <TabsTrigger value="credentials" className="gap-1.5">
+                <KeyRound className="w-4 h-4" />
+                Credenciales
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="info">
+              <BarInfoTab
+                bar={selectedBar}
+                productCount={getBarStats(selectedBar.id).productCount}
+                workerCount={getBarStats(selectedBar.id).workerCount}
+              />
+            </TabsContent>
+
+            <TabsContent value="personal">
+              <BarPersonalTab
+                barId={selectedBar.id}
+                bars={bars}
+                workers={workers}
+                onAddWorker={addWorker}
+                onUpdateWorker={updateWorker}
+                onDeleteWorker={deleteWorker}
+              />
+            </TabsContent>
+
+            <TabsContent value="credentials">
+              <BarCredentialsTab
+                barId={selectedBar.id}
+                credentials={credentials}
+                onAddCredential={addCredential}
+                onUpdateCredential={updateCredential}
+                onDeleteCredential={deleteCredential}
+              />
+            </TabsContent>
+
+          </Tabs>
         </div>
+      )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2 text-gray-500 mb-2">
-              <Package className="w-4 h-4" />
-              <span className="text-sm">Productos</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{barStats.products}</p>
-          </div>
+      {/* Bar Form Modal (Add / Edit) */}
+      <BarFormModal
+        open={barFormOpen}
+        onClose={() => { setBarFormOpen(false); setEditingBar(undefined); }}
+        onSave={handleSaveBar}
+        bar={editingBar}
+      />
 
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2 text-gray-500 mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">Valor Inventario</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">${barStats.value.toLocaleString()}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2 text-gray-500 mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">Ventas Hoy</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{barStats.sales}</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2 text-gray-500 mb-2">
-              <Users className="w-4 h-4" />
-              <span className="text-sm">Personal</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{barStats.staff}</p>
-          </div>
-        </div>
-      </div>
+      {/* Delete Bar Confirmation */}
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteBar}
+        title="Eliminar Bar"
+        description={`¿Estás seguro de eliminar "${deleteTarget?.name}"? Se eliminarán todas las credenciales asociadas. Esta acción no se puede deshacer.`}
+      />
     </div>
   );
 }

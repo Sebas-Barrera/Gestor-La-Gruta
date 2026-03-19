@@ -8,10 +8,12 @@ interface InventoryAlertsProps {
   bars: Bar[];
   products: Product[];
   onViewAll: () => void;
+  /** Callback al hacer click en la flecha de una alerta. Navega al producto en inventario. Backend: GET /api/products/:id */
+  onAlertClick?: (alert: InventoryAlert) => void;
   delay?: number;
 }
 
-export function InventoryAlerts({ alerts, bars, products, onViewAll, delay = 0 }: InventoryAlertsProps) {
+export function InventoryAlerts({ alerts, bars, products, onViewAll, onAlertClick, delay = 0 }: InventoryAlertsProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
 
@@ -127,12 +129,19 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, delay = 0 }
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-0.5">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {alert.productName}
                   </p>
                 </div>
-                
+
+                {/* Categoría / Subcategoría */}
+                {product && (
+                  <p className="text-xs text-gray-500 mb-1 truncate">
+                    {product.category} → {product.subcategory}
+                  </p>
+                )}
+
                 {/* Bar Badge */}
                 {bar && (
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -171,7 +180,11 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, delay = 0 }
                 </p>
               </div>
 
-              <button className="p-1.5 rounded-lg hover:bg-white/50 transition-colors flex-shrink-0">
+              <button
+                onClick={() => onAlertClick?.(alert)}
+                className="p-1.5 rounded-lg hover:bg-white/50 transition-colors flex-shrink-0"
+                title="Ver producto en inventario"
+              >
                 <ArrowRight className="w-4 h-4 text-gray-400" />
               </button>
             </div>

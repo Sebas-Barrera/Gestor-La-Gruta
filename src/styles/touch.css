@@ -1,0 +1,69 @@
+/* ===========================
+   Touch-Friendly Utilities
+   For tablet/touch screen optimization
+   =========================== */
+
+/* Base touch targets - minimum 44px (Apple HIG / WCAG 2.5.5) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-target-lg {
+  min-height: 56px;
+  min-width: 56px;
+}
+
+.touch-target-xl {
+  min-height: 64px;
+  min-width: 64px;
+}
+
+/* PIN keypad buttons */
+.pin-key {
+  min-height: 60px;
+  min-width: 60px;
+  font-size: 24px;
+  font-weight: 600;
+  border-radius: 12px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.pin-key:active {
+  transform: scale(0.95);
+}
+
+/* Prevent iOS zoom on input focus (requires font-size >= 16px) */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Disable text selection on interactive elements */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Disable tap highlight on mobile */
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch manipulation - disables double-tap zoom, allows pan/pinch */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Shake animation for PIN error feedback */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}

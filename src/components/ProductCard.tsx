@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Plus, Package, MapPin, Weight } from 'lucide-react';
+import { Package, Weight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ProductImage } from '@/components/shared/ProductImage';
 import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
-  onAddToLocation: (product: Product) => void;
+  onSelect: (product: Product) => void;
   delay?: number;
 }
 
@@ -16,7 +17,7 @@ const statusConfig = {
   out_of_stock: { label: 'Sin Stock', className: 'bg-red-100 text-red-700' },
 };
 
-export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCardProps) {
+export function ProductCard({ product, onSelect, delay = 0 }: ProductCardProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
 
   const status = statusConfig[product.status];
   const stockPercentage = (product.stock / product.maxStock) * 100;
+  const displayUnit = product.isWeightBased ? (product.weightUnit || product.unit) : product.unit;
 
   return (
     <div
@@ -57,10 +59,15 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
 
       {/* Content */}
       <div className="p-4">
-        <h4 className="text-base font-semibold text-gray-900 mb-1">{product.name}</h4>
-        <p className="text-sm text-gray-500 mb-4">
-          {product.category} → {product.subcategory}
-        </p>
+        <div className="flex items-start gap-3 mb-3">
+          <ProductImage product={product} size="md" />
+          <div className="min-w-0 flex-1">
+            <h4 className="text-base font-semibold text-gray-900 leading-tight">{product.name}</h4>
+            <p className="text-sm text-gray-500">
+              {product.category} → {product.subcategory}
+            </p>
+          </div>
+        </div>
 
         {/* Stock Progress */}
         <div className="mb-4">
@@ -71,7 +78,7 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
               stockPercentage < 20 ? 'text-red-600' :
               stockPercentage < 50 ? 'text-amber-600' : 'text-blue-600'
             )}>
-              {product.stock} / {product.maxStock}
+              {product.isWeightBased ? product.stock.toFixed(1) : product.stock} / {product.maxStock} {displayUnit}
             </span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -89,32 +96,24 @@ export function ProductCard({ product, onAddToLocation, delay = 0 }: ProductCard
           </div>
         </div>
 
-        {/* Details */}
-        <div className="grid grid-cols-2 gap-3 text-xs mb-4">
-          <div className="flex items-center gap-2 text-gray-600">
-            <MapPin className="w-3.5 h-3.5 text-gray-400" />
-            <span>Ubicación: {product.location || 'N/A'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Weight className="w-3.5 h-3.5 text-gray-400" />
-            <span>${product.price} c/u</span>
-          </div>
+        {/* Price */}
+        <div className="flex items-center gap-2 text-xs text-gray-600 mb-4">
+          <Weight className="w-3.5 h-3.5 text-gray-400" />
+          <span>${product.price} c/u</span>
         </div>
 
         {/* Action Button */}
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onAddToLocation(product)}
-          disabled={product.status === 'out_of_stock'}
+          onClick={() => onSelect(product)}
           className={cn(
             'w-full gap-2 transition-all duration-200',
             'hover:bg-blue-500 hover:text-white hover:border-blue-500',
-            product.status === 'out_of_stock' && 'opacity-50 cursor-not-allowed'
           )}
         >
-          <Plus className="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" />
-          Agregar a ubicación
+          <Package className="w-4 h-4" />
+          Ver Producto
         </Button>
       </div>
     </div>

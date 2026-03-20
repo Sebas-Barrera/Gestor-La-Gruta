@@ -50,13 +50,15 @@ export function Header({ breadcrumbs, barName, userRole = 'admin', onSectionChan
       {/* Actions */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onSectionChange?.('alerts')}
-            className="relative p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110"
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-          </button>
+          {userRole === 'admin' && (
+            <button
+              onClick={() => onSectionChange?.('alerts')}
+              className="relative p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition-all duration-200 hover:scale-110"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            </button>
+          )}
 
           {userRole === 'admin' && (
             <button

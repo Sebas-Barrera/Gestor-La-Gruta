@@ -103,11 +103,14 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
         </div>
       </div>
 
-      {/* Container con aspect-ratio (4:3) para fijar el alto exacto de 3 filas, con overflow */}
+      {/* Container con aspect-ratio (4:3) para fijar el alto exacto de 3 filas, con overflow.
+          -inset-2 extiende el scroll container 8px en cada dirección.
+          p-2 compensa con padding interno → el contenido queda en la misma posición visual.
+          El espacio extra permite que hover:scale-105 no se recorte en los bordes. */}
       <div className="relative w-full aspect-[4/3]">
-        <div className="absolute inset-0 overflow-y-auto pr-2 -mr-2">
+        <div className="absolute -inset-2 overflow-y-auto p-2">
           {/* Grid */}
-          <div className="grid grid-cols-4 gap-3 pb-1">
+          <div className="grid grid-cols-4 gap-3">
             {slots.map((slot, index) => {
               const status = getSlotStatus(slot);
           const isSlotVisible = visibleSlots.includes(index);

@@ -240,14 +240,64 @@ export function WorkerInventorySection() {
     setVerifiedWorker(null);
   };
 
+  /**
+   * Guardar ajuste manual de stock.
+   *
+   * Backend:
+   *   PUT /api/inventory/stock-adjustment
+   *   Body: { productId, previousQuantity, newQuantity, difference, movementType, notes?, barId, workerId }
+   *   Response: InventoryMovement
+   */
   const handleStockSave = (newQuantity: number, notes?: string) => {
-    console.log('Stock adjusted:', { product: selectedProduct?.name, newQuantity, notes, worker: verifiedWorker?.name });
+    if (!selectedProduct) return;
+
+    const diff = newQuantity - selectedProduct.stock;
+    const movementType = diff > 0 ? 'entrada' : 'salida';
+
+    console.log('[Worker:StockAdjust] Datos para backend:', {
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      previousQuantity: selectedProduct.stock,
+      newQuantity,
+      difference: diff,
+      movementType,
+      unit: selectedProduct.unit,
+      notes,
+      barId: currentBar?.id,
+      workerId: verifiedWorker?.id,
+      workerName: verifiedWorker?.name,
+    });
+
+    toast.success(`Stock de "${selectedProduct.name}" ajustado`, {
+      description: `${diff > 0 ? '+' : ''}${diff} ${selectedProduct.unit} (${movementType}) por ${verifiedWorker?.name || 'Trabajador'}`,
+    });
+
     setStockModalOpen(false);
     setVerifiedWorker(null);
   };
 
+  /**
+   * Guardar edición de producto.
+   *
+   * Backend:
+   *   PATCH /api/products/:productId
+   *   Body: Partial<Product> (name, category, subcategory, supplier, price, minStock, maxStock, barcode, isWeightBased, weightUnit, image)
+   *   Response: Product (actualizado)
+   */
   const handleProductSave = (data: Partial<Product>) => {
-    console.log('Product edited:', { ...data, worker: verifiedWorker?.name });
+    console.log('[Worker:EditProduct] Datos para backend:', {
+      productId: selectedProduct?.id,
+      productName: selectedProduct?.name,
+      updates: data,
+      barId: currentBar?.id,
+      workerId: verifiedWorker?.id,
+      workerName: verifiedWorker?.name,
+    });
+
+    toast.success(`Producto "${selectedProduct?.name}" actualizado`, {
+      description: `Cambios guardados por ${verifiedWorker?.name || 'Trabajador'}`,
+    });
+
     setEditModalOpen(false);
     setVerifiedWorker(null);
   };

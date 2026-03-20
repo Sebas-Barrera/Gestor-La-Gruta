@@ -10,7 +10,8 @@ import { BarCredentialsTab } from '@/components/bars/BarCredentialsTab';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { products } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-import type { Bar } from '@/types';
+import { toast } from 'sonner';
+import type { Bar, Worker, BarCredential } from '@/types';
 
 export function BarsSection() {
   const {
@@ -45,23 +46,187 @@ export function BarsSection() {
     };
   };
 
+  /**
+   * Crear o actualizar un bar.
+   *
+   * Backend:
+   *   Crear → POST /api/bars         Body: Omit<Bar, 'id'>   Response: Bar
+   *   Editar → PUT /api/bars/:barId   Body: Omit<Bar, 'id'>   Response: Bar
+   */
   const handleSaveBar = (data: Omit<Bar, 'id'>) => {
     if (editingBar) {
       updateBar(editingBar.id, data);
+
+      console.log('[Bars:Update] Datos para backend:', {
+        barId: editingBar.id,
+        updates: data,
+      });
+
+      toast.success(`Bar "${data.name}" actualizado`, {
+        description: 'Los cambios han sido guardados',
+      });
     } else {
       const newBar = addBar(data);
       setSelectedBarId(newBar.id);
+
+      console.log('[Bars:Create] Datos para backend:', {
+        bar: data,
+      });
+
+      toast.success(`Bar "${data.name}" creado`, {
+        description: `Ubicación: ${data.location}`,
+      });
     }
     setEditingBar(undefined);
   };
 
+  /**
+   * Eliminar un bar y sus credenciales asociadas.
+   *
+   * Backend:
+   *   DELETE /api/bars/:barId
+   *   Response: { success: boolean }
+   *   Nota: El backend debe eliminar en cascada las credenciales (BarCredential) asociadas.
+   */
   const handleDeleteBar = () => {
     if (!deleteTarget) return;
+    const deletedName = deleteTarget.name;
+
+    console.log('[Bars:Delete] Datos para backend:', {
+      barId: deleteTarget.id,
+      barName: deletedName,
+    });
+
     deleteBar(deleteTarget.id);
     setDeleteTarget(null);
     if (selectedBarId === deleteTarget.id) {
       setSelectedBarId(bars.find(b => b.id !== deleteTarget.id)?.id ?? '');
     }
+
+    toast.success(`Bar "${deletedName}" eliminado`, {
+      description: 'El bar y sus credenciales asociadas fueron eliminados',
+    });
+  };
+
+  // ─── Wrappers de Worker con notificaciones ───
+
+  /**
+   * Agregar un trabajador a un bar.
+   *
+   * Backend:
+   *   POST /api/workers
+   *   Body: Omit<Worker, 'id' | 'createdAt'> (name, pin, barIds, phone, isActive, avatar?)
+   *   Response: Worker
+   */
+  const handleAddWorker = (data: Omit<Worker, 'id' | 'createdAt'>) => {
+    addWorker(data);
+
+    console.log('[Workers:Create] Datos para backend:', { worker: data });
+
+    toast.success(`Trabajador "${data.name}" agregado`, {
+      description: `Asignado a ${data.barIds.length} bar(es)`,
+    });
+  };
+
+  /**
+   * Actualizar datos de un trabajador.
+   *
+   * Backend:
+   *   PATCH /api/workers/:workerId
+   *   Body: Partial<Worker>
+   *   Response: Worker (actualizado)
+   */
+  const handleUpdateWorker = (id: string, data: Partial<Worker>) => {
+    updateWorker(id, data);
+
+    console.log('[Workers:Update] Datos para backend:', { workerId: id, updates: data });
+
+    toast.success(`Trabajador "${data.name || 'seleccionado'}" actualizado`, {
+      description: 'Los cambios han sido guardados',
+    });
+  };
+
+  /**
+   * Eliminar un trabajador.
+   *
+   * Backend:
+   *   DELETE /api/workers/:workerId
+   *   Response: { success: boolean }
+   */
+  const handleDeleteWorker = (id: string) => {
+    const worker = workers.find(w => w.id === id);
+
+    console.log('[Workers:Delete] Datos para backend:', {
+      workerId: id,
+      workerName: worker?.name,
+    });
+
+    deleteWorker(id);
+
+    toast.success(`Trabajador "${worker?.name || ''}" eliminado`, {
+      description: 'El trabajador fue removido del sistema',
+    });
+  };
+
+  // ─── Wrappers de Credenciales con notificaciones ───
+
+  /**
+   * Crear una credencial de acceso para un bar.
+   *
+   * Backend:
+   *   POST /api/bar-credentials
+   *   Body: Omit<BarCredential, 'id'> (barId, accessCode, isActive, label?)
+   *   Response: BarCredential
+   *   Nota: accessCode debe ser UNIQUE en toda la tabla.
+   */
+  const handleAddCredential = (data: Omit<BarCredential, 'id'>) => {
+    addCredential(data);
+
+    console.log('[Credentials:Create] Datos para backend:', { credential: data });
+
+    toast.success('Credencial creada', {
+      description: `${data.label || 'Nueva credencial'} · Código de acceso asignado`,
+    });
+  };
+
+  /**
+   * Actualizar una credencial de acceso.
+   *
+   * Backend:
+   *   PATCH /api/bar-credentials/:credentialId
+   *   Body: Partial<BarCredential>
+   *   Response: BarCredential (actualizada)
+   */
+  const handleUpdateCredential = (id: string, data: Partial<BarCredential>) => {
+    updateCredential(id, data);
+
+    console.log('[Credentials:Update] Datos para backend:', { credentialId: id, updates: data });
+
+    toast.success('Credencial actualizada', {
+      description: 'Los cambios han sido guardados',
+    });
+  };
+
+  /**
+   * Eliminar una credencial de acceso.
+   *
+   * Backend:
+   *   DELETE /api/bar-credentials/:credentialId
+   *   Response: { success: boolean }
+   */
+  const handleDeleteCredential = (id: string) => {
+    const cred = credentials.find(c => c.id === id);
+
+    console.log('[Credentials:Delete] Datos para backend:', {
+      credentialId: id,
+      label: cred?.label,
+    });
+
+    deleteCredential(id);
+
+    toast.success('Credencial eliminada', {
+      description: `${cred?.label || 'Credencial'} fue removida del bar`,
+    });
   };
 
   return (
@@ -244,9 +409,9 @@ export function BarsSection() {
                 barId={selectedBar.id}
                 bars={bars}
                 workers={workers}
-                onAddWorker={addWorker}
-                onUpdateWorker={updateWorker}
-                onDeleteWorker={deleteWorker}
+                onAddWorker={handleAddWorker}
+                onUpdateWorker={handleUpdateWorker}
+                onDeleteWorker={handleDeleteWorker}
               />
             </TabsContent>
 
@@ -254,9 +419,9 @@ export function BarsSection() {
               <BarCredentialsTab
                 barId={selectedBar.id}
                 credentials={credentials}
-                onAddCredential={addCredential}
-                onUpdateCredential={updateCredential}
-                onDeleteCredential={deleteCredential}
+                onAddCredential={handleAddCredential}
+                onUpdateCredential={handleUpdateCredential}
+                onDeleteCredential={handleDeleteCredential}
               />
             </TabsContent>
 

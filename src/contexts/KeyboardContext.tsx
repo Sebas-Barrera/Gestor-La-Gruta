@@ -293,15 +293,30 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
 // ─── Internal hook (solo para uso dentro de shared/TouchInput etc.) ───────────
 
 /**
+ * Fallback no-op para cuando el contexto no está disponible.
+ * Evita crash (pantalla blanca) en edge cases donde un componente
+ * se renderiza momentáneamente fuera del provider (ej. portales de
+ * Radix Dialog durante transiciones entre modales).
+ */
+const NOOP_CONTEXT: KeyboardContextValue = {
+  openKeyboard: () => {},
+  closeKeyboard: () => {},
+  isOpen: false,
+  mode: 'alpha',
+};
+
+/**
  * Hook interno para acceder al contexto del teclado.
  * No lanzar directamente en componentes de negocio — usar `useKeyboard()` de hooks/.
  *
- * @throws Si se usa fuera de `<KeyboardProvider>`
+ * Retorna un fallback no-op si se usa fuera de `<KeyboardProvider>`,
+ * en lugar de lanzar un error que crashearía toda la app.
  */
 export function useKeyboardContext(): KeyboardContextValue {
   const ctx = useContext(KeyboardContext);
   if (!ctx) {
-    throw new Error('useKeyboardContext debe usarse dentro de <KeyboardProvider>');
+    console.warn('[KeyboardContext] useKeyboardContext llamado fuera de <KeyboardProvider>. Usando fallback no-op.');
+    return NOOP_CONTEXT;
   }
   return ctx;
 }

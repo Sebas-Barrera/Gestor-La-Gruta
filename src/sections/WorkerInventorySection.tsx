@@ -1,23 +1,24 @@
 import { useState } from 'react';
-import { Search, Grid3X3, List, ScanLine, Scale } from 'lucide-react';
+import { Search, Grid3X3, List, ScanLine, Scale, ClipboardCheck } from 'lucide-react';
 import { TouchInput } from '@/components/shared/TouchInput';
 import { Button } from '@/components/ui/button';
 import { ProductInfoPanel } from '@/components/ProductInfoPanel';
 import { InventoryGrid } from '@/components/InventoryGrid';
 import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { products } from '@/data/mockData';
+import { products, productBarcodes } from '@/data/mockData';
 import { PinVerificationModal } from '@/components/worker/PinVerificationModal';
 import { StockAdjustmentModal } from '@/components/worker/StockAdjustmentModal';
 import { ProductFormModal } from '@/components/worker/ProductFormModal';
 import { ScannerOverlay } from '@/components/worker/ScannerOverlay';
 import { ScaleOverlay } from '@/components/worker/ScaleOverlay';
+import { BatchReceptionSheet } from '@/components/admin/BatchReceptionSheet';
 import { InventoryEntryModal } from '@/components/shared/InventoryEntryModal';
 import { InventoryExitModal } from '@/components/shared/InventoryExitModal';
 import { InventoryFilter, applyInventoryFilters } from '@/components/shared/InventoryFilter';
 import { InventorySort, applyInventorySort } from '@/components/shared/InventorySort';
 import { toast } from 'sonner';
-import type { Product, Worker } from '@/types';
+import type { Product, Worker, ReceptionSession } from '@/types';
 import type { InventoryFilters } from '@/components/shared/InventoryFilter';
 import type { InventorySortConfig } from '@/components/shared/InventorySort';
 
@@ -28,6 +29,7 @@ type PinAction =
   | 'scanner_out'
   | 'scale_entry'
   | 'scale_out'
+  | 'batch_reception'
   | null;
 
 export function WorkerInventorySection() {
@@ -54,6 +56,7 @@ export function WorkerInventorySection() {
   const [showEntryConfirm, setShowEntryConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
+  const [showBatchReception, setShowBatchReception] = useState(false);
 
   // Filter products by current bar
   const barProducts = products.filter(p => p.barId === currentBar?.id);
@@ -99,6 +102,9 @@ export function WorkerInventorySection() {
         break;
       case 'scale_entry':
         setShowEntryConfirm(true);
+        break;
+      case 'batch_reception':
+        setShowBatchReception(true);
         break;
     }
     setPinAction(null);
@@ -196,6 +202,44 @@ export function WorkerInventorySection() {
     setVerifiedWorker(null);
   };
 
+  /**
+   * Recepción por lotes confirmada.
+   * Backend: POST /api/reception-sessions → PUT /api/reception-sessions/:id/confirm
+   * Nota: Los trabajadores solo pueden agregar productos EXISTENTES por lotes.
+   *       No pueden registrar productos nuevos (onBarcodeNotFound muestra toast).
+   */
+  const handleBatchSessionConfirmed = (session: ReceptionSession) => {
+    console.log('[Worker:BatchReception] Sesión confirmada para backend:', {
+      sessionId: session.id,
+      barId: session.barId,
+      workerName: verifiedWorker?.name,
+      status: session.status,
+      confirmedAt: session.confirmedAt,
+      notes: session.notes,
+      itemCount: session.items.length,
+      items: session.items.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productBarcodeId: item.productBarcodeId,
+        barcodeLabel: item.barcodeLabel,
+        scanCount: item.scanCount,
+        quantityPerScan: item.quantityPerScan,
+        totalIndividualQty: item.totalIndividualQty,
+        unit: item.unit,
+        isWeightBased: item.isWeightBased,
+        weight: item.weight,
+      })),
+    });
+
+    const totalUnits = session.items.reduce((sum, i) => sum + i.totalIndividualQty, 0);
+    toast.success(`Recepción confirmada: ${session.items.length} productos, ${Number.isInteger(totalUnits) ? totalUnits : totalUnits.toFixed(2)} unidades`, {
+      description: `${currentBar?.name} · Registrado por ${verifiedWorker?.name || 'Trabajador'}`,
+    });
+
+    setShowBatchReception(false);
+    setVerifiedWorker(null);
+  };
+
   const handleStockSave = (newQuantity: number, notes?: string) => {
     console.log('Stock adjusted:', { product: selectedProduct?.name, newQuantity, notes, worker: verifiedWorker?.name });
     setStockModalOpen(false);
@@ -238,6 +282,18 @@ export function WorkerInventorySection() {
         >
           {isAddingProduct ? 'Modo: ENTRADA activo' : 'Agregar Inventario'}
         </Button>
+
+        {/* Recepción por lotes — solo visible en modo ENTRADA, requiere PIN */}
+        {isAddingProduct && (
+          <Button
+            variant="outline"
+            onClick={() => requestPin('batch_reception')}
+            className="gap-2 min-h-[44px] border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400"
+          >
+            <ClipboardCheck className="w-5 h-5" />
+            Recepción por Lotes
+          </Button>
+        )}
       </div>
 
       {/* Main Content */}
@@ -396,6 +452,23 @@ export function WorkerInventorySection() {
         barName={currentBar?.name || ''}
         onConfirm={handleExitConfirm}
         authorizedBy={verifiedWorker?.name}
+      />
+
+      {/* Recepción por Lotes (solo productos existentes, sin crear nuevos) */}
+      <BatchReceptionSheet
+        open={showBatchReception}
+        onClose={() => { setShowBatchReception(false); setVerifiedWorker(null); }}
+        barId={currentBar?.id || ''}
+        barName={currentBar?.name || ''}
+        adminName={verifiedWorker?.name || 'Trabajador'}
+        products={barProducts}
+        productBarcodes={productBarcodes}
+        onSessionConfirmed={handleBatchSessionConfirmed}
+        onBarcodeNotFound={() => {
+          toast.error('Producto no registrado', {
+            description: 'Este código de barras no está registrado. Pide al administrador que lo registre en el inventario.',
+          });
+        }}
       />
 
       {/* Ajustar Stock (desde ProductInfoPanel) */}

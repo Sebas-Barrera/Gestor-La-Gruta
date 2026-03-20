@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { ScanLine, Search, ArrowDownCircle, ArrowUpCircle, AlertCircle, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { lookupBarcode } from '@/lib/barcodeLookup';
@@ -171,7 +171,7 @@ export function ScannerOverlay({
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
+                <TouchInput
                   placeholder="Escanea o escribe el código..."
                   value={barcodeInput}
                   onChange={(e) => { setBarcodeInput(e.target.value); setBarcodeError(null); }}
@@ -208,7 +208,7 @@ export function ScannerOverlay({
           {/* Manual search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
+            <TouchInput
               placeholder="Buscar por nombre o SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

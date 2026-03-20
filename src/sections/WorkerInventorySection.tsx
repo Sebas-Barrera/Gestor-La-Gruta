@@ -317,11 +317,15 @@ export function WorkerInventorySection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={viewMode === 'grid'
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+          : 'flex flex-col gap-2'
+        }>
           {filteredProducts.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
+              variant={viewMode === 'grid' ? 'card' : 'list'}
               onSelect={(p) => {
                 setSelectedProduct(p);
               }}

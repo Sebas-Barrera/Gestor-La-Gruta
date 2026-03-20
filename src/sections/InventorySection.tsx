@@ -552,12 +552,16 @@ export function InventorySection() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Products Grid / List */}
+        <div className={viewMode === 'grid'
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+          : 'flex flex-col gap-2'
+        }>
           {filteredProducts.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
+              variant={viewMode === 'grid' ? 'card' : 'list'}
               onSelect={handleSelectProduct}
               delay={300 + index * 100}
             />

@@ -9,6 +9,8 @@ interface ProductCardProps {
   product: Product;
   onSelect: (product: Product) => void;
   delay?: number;
+  /** 'card' = tarjeta rectangular (default), 'list' = fila compacta horizontal */
+  variant?: 'card' | 'list';
 }
 
 const statusConfig = {
@@ -17,7 +19,7 @@ const statusConfig = {
   out_of_stock: { label: 'Sin Stock', className: 'bg-red-100 text-red-700' },
 };
 
-export function ProductCard({ product, onSelect, delay = 0 }: ProductCardProps) {
+export function ProductCard({ product, onSelect, delay = 0, variant = 'card' }: ProductCardProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -29,6 +31,77 @@ export function ProductCard({ product, onSelect, delay = 0 }: ProductCardProps) 
   const stockPercentage = (product.stock / product.maxStock) * 100;
   const displayUnit = product.isWeightBased ? (product.weightUnit || product.unit) : product.unit;
 
+  const stockColor =
+    stockPercentage < 20 ? 'red' :
+    stockPercentage < 50 ? 'amber' : 'blue';
+
+  const stockColorClasses = {
+    red:   { text: 'text-red-600',   bar: 'bg-red-500' },
+    amber: { text: 'text-amber-600', bar: 'bg-amber-500' },
+    blue:  { text: 'text-blue-600',  bar: 'bg-blue-500' },
+  }[stockColor];
+
+  // ─── List variant (compact row) ────────────────────────────────────────────
+  if (variant === 'list') {
+    return (
+      <div
+        onClick={() => onSelect(product)}
+        className={cn(
+          'bg-white rounded-lg border border-gray-200 px-4 py-3 cursor-pointer',
+          'transition-all duration-300 ease-out',
+          'hover:shadow-md hover:border-blue-200',
+          isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+        )}
+        style={{ transitionDelay: `${delay}ms` }}
+      >
+        <div className="flex items-center gap-4">
+          <ProductImage product={product} size="md" />
+
+          {/* Name + SKU */}
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h4>
+            <p className="text-xs text-gray-500">{product.sku}</p>
+          </div>
+
+          {/* Category */}
+          <p className="hidden sm:block text-xs text-gray-500 w-32 truncate">
+            {product.category}
+          </p>
+
+          {/* Stock bar */}
+          <div className="w-28 hidden md:block">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className={cn('font-medium', stockColorClasses.text)}>
+                {product.isWeightBased ? product.stock.toFixed(1) : product.stock}/{product.maxStock}
+              </span>
+              <span className="text-gray-400">{displayUnit}</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={cn('h-full rounded-full transition-all duration-700 ease-out', stockColorClasses.bar)}
+                style={{
+                  width: isVisible ? `${stockPercentage}%` : '0%',
+                  transitionDelay: `${delay + 150}ms`,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Price */}
+          <span className="text-sm font-medium text-gray-700 w-20 text-right">
+            ${product.price}
+          </span>
+
+          {/* Status badge */}
+          <span className={cn('text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap', status.className)}>
+            {status.label}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Card variant (default rectangular) ────────────────────────────────────
   return (
     <div
       className={cn(
@@ -73,11 +146,7 @@ export function ProductCard({ product, onSelect, delay = 0 }: ProductCardProps) 
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-2">
             <span className="text-gray-500">Stock</span>
-            <span className={cn(
-              'font-medium',
-              stockPercentage < 20 ? 'text-red-600' :
-              stockPercentage < 50 ? 'text-amber-600' : 'text-blue-600'
-            )}>
+            <span className={cn('font-medium', stockColorClasses.text)}>
               {product.isWeightBased ? product.stock.toFixed(1) : product.stock} / {product.maxStock} {displayUnit}
             </span>
           </div>
@@ -85,10 +154,9 @@ export function ProductCard({ product, onSelect, delay = 0 }: ProductCardProps) 
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-700 ease-out',
-                stockPercentage < 20 ? 'bg-red-500' :
-                stockPercentage < 50 ? 'bg-amber-500' : 'bg-blue-500'
+                stockColorClasses.bar,
               )}
-              style={{ 
+              style={{
                 width: isVisible ? `${stockPercentage}%` : '0%',
                 transitionDelay: `${delay + 200}ms`
               }}

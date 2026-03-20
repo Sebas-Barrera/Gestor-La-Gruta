@@ -23,9 +23,16 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
   const [isVisible, setIsVisible] = useState(false);
   const [visibleSlots, setVisibleSlots] = useState<number[]>([]);
 
+  // Calcular total de slots necesarios para mostrar todos los productos, redondeado a múltiplos de 4
+  // Mínimo 12 slots (3 filas) para mantener el diseño original
+  const totalSlots = Math.max(12, Math.ceil(products.length / 4) * 4);
+
   // Generate slots based on products
-  const slots: InventorySlot[] = Array.from({ length: 12 }, (_, i) => {
-    const row = String.fromCharCode(65 + Math.floor(i / 4));
+  const slots: InventorySlot[] = Array.from({ length: totalSlots }, (_, i) => {
+    const rowNum = Math.floor(i / 4);
+    const row = rowNum < 26 
+      ? String.fromCharCode(65 + rowNum) 
+      : `${String.fromCharCode(65 + Math.floor(rowNum/26) - 1)}${String.fromCharCode(65 + (rowNum%26))}`;
     const col = (i % 4) + 1;
     const product = products[i];
     
@@ -96,10 +103,13 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-4 gap-3">
-        {slots.map((slot, index) => {
-          const status = getSlotStatus(slot);
+      {/* Container con aspect-ratio (4:3) para fijar el alto exacto de 3 filas, con overflow */}
+      <div className="relative w-full aspect-[4/3]">
+        <div className="absolute inset-0 overflow-y-auto pr-2 -mr-2">
+          {/* Grid */}
+          <div className="grid grid-cols-4 gap-3 pb-1">
+            {slots.map((slot, index) => {
+              const status = getSlotStatus(slot);
           const isSlotVisible = visibleSlots.includes(index);
           const percentage = slot.product ? (slot.current / slot.capacity) * 100 : 0;
 
@@ -180,7 +190,9 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
               )}
             </button>
           );
-        })}
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

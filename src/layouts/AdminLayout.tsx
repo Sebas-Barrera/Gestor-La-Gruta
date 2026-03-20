@@ -60,9 +60,7 @@ export function AdminLayout() {
           onSectionChange={handleSectionChange}
         />
 
-        <div className="animate-in fade-in duration-300">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
 
       <Toaster

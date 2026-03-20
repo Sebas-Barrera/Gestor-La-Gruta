@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, XCircle, Package, ChevronRight, Store, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { InventoryAlert, Bar, Product } from '@/types';
@@ -17,6 +17,8 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, onAlertClic
   const [isVisible, setIsVisible] = useState(false);
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
 
+  const stableAlerts = useMemo(() => alerts, [JSON.stringify(alerts.map(a => a.id))]);
+
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), delay);
     return () => clearTimeout(timer);
@@ -25,12 +27,19 @@ export function InventoryAlerts({ alerts, bars, products, onViewAll, onAlertClic
   useEffect(() => {
     if (!isVisible) return;
 
-    alerts.forEach((_, index) => {
-      setTimeout(() => {
-        setVisibleItems(prev => [...prev, index]);
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    stableAlerts.forEach((_, index) => {
+      const t = setTimeout(() => {
+        setVisibleItems(prev => {
+          if (prev.includes(index)) return prev;
+          return [...prev, index];
+        });
       }, 200 + index * 100);
+      timeouts.push(t);
     });
-  }, [isVisible, alerts]);
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [isVisible, stableAlerts]);
 
   const criticalAlerts = alerts.filter(a => a.type === 'out_of_stock');
   const lowStockAlerts = alerts.filter(a => a.type === 'low_stock');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Package,
   AlertTriangle,
@@ -48,7 +48,10 @@ function formatRelativeTime(timestamp: string): string {
 }
 
 export function ActivityLog({ activities, bars, onViewAll, maxItems = 10, delay = 0 }: ActivityLogProps) {
-  const displayedActivities = activities.slice(0, maxItems);
+  const displayedActivities = useMemo(
+    () => activities.slice(0, maxItems),
+    [activities, maxItems]
+  );
   const hasMore = activities.length > maxItems;
   const [isVisible, setIsVisible] = useState(false);
   const [visibleItems, setVisibleItems] = useState<number[]>([]);
@@ -61,11 +64,18 @@ export function ActivityLog({ activities, bars, onViewAll, maxItems = 10, delay 
   useEffect(() => {
     if (!isVisible) return;
 
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
     displayedActivities.forEach((_, index) => {
-      setTimeout(() => {
-        setVisibleItems(prev => [...prev, index]);
+      const t = setTimeout(() => {
+        setVisibleItems(prev => {
+          if (prev.includes(index)) return prev;
+          return [...prev, index];
+        });
       }, 200 + index * 80);
+      timeouts.push(t);
     });
+
+    return () => timeouts.forEach(clearTimeout);
   }, [isVisible, displayedActivities]);
 
   return (

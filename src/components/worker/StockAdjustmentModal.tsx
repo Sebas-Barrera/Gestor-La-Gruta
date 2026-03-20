@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Minus, Plus, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TouchTextarea } from '@/components/shared/TouchTextarea';
+import { QuickAddButtons } from '@/components/shared/QuickAddButtons';
 import type { Product } from '@/types';
 
 interface StockAdjustmentModalProps {
@@ -87,6 +88,15 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
               <Plus className="w-6 h-6" />
             </button>
           </div>
+
+          {/* Quick-add presets */}
+          <QuickAddButtons
+            isWeightBased={!!product.isWeightBased}
+            weightUnit={product.weightUnit}
+            onAdd={(amount) => setQuantity(prev => Math.min(Number((prev + amount).toFixed(2)), product.maxStock))}
+            maxAdd={Number((product.maxStock - quantity).toFixed(2))}
+            colorScheme="blue"
+          />
 
           {/* Diff indicator */}
           {diff !== 0 && (

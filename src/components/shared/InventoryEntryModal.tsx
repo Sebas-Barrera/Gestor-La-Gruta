@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Minus, Plus, ArrowDownCircle, Boxes } from 'lucide-react';
+import { QuickAddButtons } from '@/components/shared/QuickAddButtons';
 import type { Product, ProductBarcode } from '@/types';
 
 /**
@@ -152,6 +153,14 @@ export function InventoryEntryModal({
               <Plus className="w-6 h-6" />
             </button>
           </div>
+
+          {/* Quick-add presets */}
+          <QuickAddButtons
+            isWeightBased={!!product.isWeightBased}
+            weightUnit={product.weightUnit}
+            onAdd={(amount) => setQuantity(prev => Number((prev + amount).toFixed(2)))}
+            colorScheme="green"
+          />
 
           {/* Box total conversion */}
           {isBox && (

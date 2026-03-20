@@ -21,10 +21,13 @@
  * @module OnScreenKeyboard
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { RefObject } from 'react';
 import { cn } from '@/lib/utils';
 import { Delete, CornerDownLeft, X, ArrowBigUp } from 'lucide-react';
+
+/** Tiempo en ms que se debe mantener presionado DEL para borrar todo */
+const LONG_PRESS_MS = 600;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,8 +76,12 @@ const alphaRowsLower = [
   ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
 ];
 
-/** Teclas especiales para la fila inferior: útiles para URLs, emails, notas */
-const specialKeys = ['@', '-', '_', '.', '/', ':'];
+/** Layout de símbolos/números (página "123") */
+const symbolRows = [
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+  ['@', '#', '$', '%', '&', '-', '_', '+', '=', '*'],
+  ['(', ')', '!', '?', "'", '"', '/', ':', ';', ','],
+];
 
 /** Layout del teclado numérico */
 const numericKeys = [
@@ -98,13 +105,50 @@ export function OnScreenKeyboard({
 }: OnScreenKeyboardProps) {
   /** Estado de mayúsculas/minúsculas (solo aplica en modo alpha) */
   const [isUpperCase, setIsUpperCase] = useState(true);
+  /** Página activa en modo alpha: letras o símbolos/números */
+  const [page, setPage] = useState<'letters' | 'symbols'>('letters');
 
   /** Resetear a mayúsculas cuando el input queda vacío */
   useEffect(() => {
     if (inputEmpty) setIsUpperCase(true);
   }, [inputEmpty]);
 
+  /** Resetear a página de letras cuando el teclado se oculta o cambia de modo */
+  useEffect(() => {
+    if (!visible) setPage('letters');
+  }, [visible, mode]);
+
   const alphaRows = isUpperCase ? alphaRowsUpper : alphaRowsLower;
+
+  // ─── Long-press en botón borrar: mantener presionado = borrar todo ──────
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPressRef = useRef(false);
+
+  const clearDeleteTimer = useCallback(() => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current);
+      deleteTimerRef.current = null;
+    }
+  }, []);
+
+  const deleteProps = {
+    onMouseDown: (e: React.MouseEvent) => e.preventDefault(),
+    onPointerDown: () => {
+      didLongPressRef.current = false;
+      deleteTimerRef.current = setTimeout(() => {
+        didLongPressRef.current = true;
+        onKeyPress('ClearAll');
+      }, LONG_PRESS_MS);
+    },
+    onPointerUp: () => {
+      clearDeleteTimer();
+      if (!didLongPressRef.current) {
+        onKeyPress('Backspace');
+      }
+    },
+    onPointerCancel: clearDeleteTimer,
+    onPointerLeave: clearDeleteTimer,
+  };
 
   const handleKey = (key: string) => {
     if (key === 'DEL') {
@@ -222,108 +266,207 @@ export function OnScreenKeyboard({
         {/* ─── MODO ALPHA ─── */}
         {mode === 'alpha' ? (
           <div className="space-y-2.5">
-            {/* Filas de letras */}
-            {alphaRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex gap-2">
-                {/* Botón Shift en la fila 3 (izquierda) */}
-                {rowIndex === 2 && (
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => setIsUpperCase((prev) => !prev)}
-                    className={keyShift}
-                    aria-label="Shift"
-                    title={isUpperCase ? 'Minúsculas' : 'Mayúsculas'}
-                  >
-                    <ArrowBigUp className="w-6 h-6" />
-                  </button>
-                )}
+            {page === 'letters' ? (
+              <>
+                {/* Filas de letras */}
+                {alphaRows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex gap-2">
+                    {/* Botón Shift en la fila 3 (izquierda) */}
+                    {rowIndex === 2 && (
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPointerUp={() => setIsUpperCase((prev) => !prev)}
+                        className={keyShift}
+                        aria-label="Shift"
+                        title={isUpperCase ? 'Minúsculas' : 'Mayúsculas'}
+                      >
+                        <ArrowBigUp className="w-6 h-6" />
+                      </button>
+                    )}
 
-                {row.map((key) => (
-                  <button
-                    key={key}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey(key)}
-                    className={keyRegular}
-                  >
-                    {key}
-                  </button>
+                    {row.map((key) => (
+                      <button
+                        key={key}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPointerUp={() => handleKey(key)}
+                        className={keyRegular}
+                      >
+                        {key}
+                      </button>
+                    ))}
+
+                    {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
+                    {rowIndex === 2 && (
+                      <button
+                        {...deleteProps}
+                        className={keyAction}
+                        aria-label="Borrar"
+                      >
+                        <Delete className="w-6 h-6" />
+                      </button>
+                    )}
+                  </div>
                 ))}
 
-                {/* Borrar en la fila 3 (derecha) */}
-                {rowIndex === 2 && (
+                {/* Fila inferior: 123 + espacio + enter */}
+                <div className="flex gap-2 items-center">
                   <button
                     onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey('DEL')}
-                    className={keyAction}
-                    aria-label="Borrar"
+                    onPointerUp={() => setPage('symbols')}
+                    className={cn(keyAction, 'text-sm')}
                   >
-                    <Delete className="w-6 h-6" />
+                    123
                   </button>
-                )}
-              </div>
-            ))}
 
-            {/* Fila inferior: especiales + espacio + enter */}
-            <div className="flex gap-2 items-center">
-              {/* Teclas especiales (@, -, _, ., /, :) */}
-              {specialKeys.map((key) => (
-                <button
-                  key={key}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onPointerUp={() => handleKey(key)}
-                  className={keySpecial}
-                >
-                  {key}
-                </button>
-              ))}
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => handleKey('SPACE')}
+                    className={cn(
+                      keyBase,
+                      'flex-1 h-14 text-base text-gray-500',
+                      'bg-white border-gray-200 hover:bg-blue-50',
+                      'shadow-sm',
+                    )}
+                  >
+                    espacio
+                  </button>
 
-              {/* Espacio */}
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onPointerUp={() => handleKey('SPACE')}
-                className={cn(
-                  keyBase,
-                  'flex-[3] h-14 text-base text-gray-500',
-                  'bg-white border-gray-200 hover:bg-blue-50',
-                  'shadow-sm',
-                )}
-              >
-                espacio
-              </button>
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => { handleKey('ENTER'); onClose(); }}
+                    className={keyBlue}
+                    aria-label="Enter"
+                  >
+                    <CornerDownLeft className="w-6 h-6" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ─── Página de símbolos/números ─── */}
+                {symbolRows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex gap-2">
+                    {/* Botón ABC en la fila 3 (izquierda) */}
+                    {rowIndex === 2 && (
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPointerUp={() => setPage('letters')}
+                        className={cn(keyAction, 'text-sm')}
+                      >
+                        ABC
+                      </button>
+                    )}
 
-              {/* Enter — inserta salto de línea en textarea o cierra teclado en input */}
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onPointerUp={() => { handleKey('ENTER'); onClose(); }}
-                className={keyBlue}
-                aria-label="Enter"
-              >
-                <CornerDownLeft className="w-6 h-6" />
-              </button>
-            </div>
+                    {row.map((key) => (
+                      <button
+                        key={key}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPointerUp={() => handleKey(key)}
+                        className={keyRegular}
+                      >
+                        {key}
+                      </button>
+                    ))}
+
+                    {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
+                    {rowIndex === 2 && (
+                      <button
+                        {...deleteProps}
+                        className={keyAction}
+                        aria-label="Borrar"
+                      >
+                        <Delete className="w-6 h-6" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {/* Fila inferior: . , + espacio + enter */}
+                <div className="flex gap-2 items-center">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => setPage('letters')}
+                    className={cn(keyAction, 'text-sm')}
+                  >
+                    ABC
+                  </button>
+
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => handleKey('.')}
+                    className={keySpecial}
+                  >
+                    .
+                  </button>
+
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => handleKey(',')}
+                    className={keySpecial}
+                  >
+                    ,
+                  </button>
+
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => handleKey('SPACE')}
+                    className={cn(
+                      keyBase,
+                      'flex-1 h-14 text-base text-gray-500',
+                      'bg-white border-gray-200 hover:bg-blue-50',
+                      'shadow-sm',
+                    )}
+                  >
+                    espacio
+                  </button>
+
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onPointerUp={() => { handleKey('ENTER'); onClose(); }}
+                    className={keyBlue}
+                    aria-label="Enter"
+                  >
+                    <CornerDownLeft className="w-6 h-6" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           /* ─── MODO NUMÉRICO ─── */
           <div className="max-w-[320px] mx-auto space-y-3">
             {numericKeys.map((row, rowIndex) => (
               <div key={rowIndex} className="flex justify-center gap-3">
-                {row.map((key) => (
-                  <button
-                    key={key}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey(key)}
-                    className={cn(
-                      keyBase,
-                      'flex-1 h-[72px] text-2xl',
-                      key === 'DEL'
-                        ? 'bg-gray-200 border-gray-300 text-gray-600 hover:bg-gray-300'
-                        : 'bg-white border-gray-200 text-gray-800 hover:bg-blue-50 hover:border-blue-300 shadow-sm',
-                    )}
-                    aria-label={key === 'DEL' ? 'Borrar' : key}
-                  >
-                    {key === 'DEL' ? <Delete className="w-6 h-6 mx-auto" /> : key}
-                  </button>
-                ))}
+                {row.map((key) =>
+                  key === 'DEL' ? (
+                    <button
+                      key={key}
+                      {...deleteProps}
+                      className={cn(
+                        keyBase,
+                        'flex-1 h-[72px] text-2xl',
+                        'bg-gray-200 border-gray-300 text-gray-600 hover:bg-gray-300',
+                      )}
+                      aria-label="Borrar"
+                    >
+                      <Delete className="w-6 h-6 mx-auto" />
+                    </button>
+                  ) : (
+                    <button
+                      key={key}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => handleKey(key)}
+                      className={cn(
+                        keyBase,
+                        'flex-1 h-[72px] text-2xl',
+                        'bg-white border-gray-200 text-gray-800 hover:bg-blue-50 hover:border-blue-300 shadow-sm',
+                      )}
+                      aria-label={key}
+                    >
+                      {key}
+                    </button>
+                  )
+                )}
               </div>
             ))}
           </div>

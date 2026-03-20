@@ -190,7 +190,11 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
     let nextValue: string;
     let nextCursor: number;
 
-    if (key === 'Backspace') {
+    if (key === 'ClearAll') {
+      // Long-press en borrar: limpiar todo el input
+      nextValue = '';
+      nextCursor = 0;
+    } else if (key === 'Backspace') {
       if (start === end && start > 0) {
         // Borrar carácter antes del cursor
         nextValue = current.slice(0, start - 1) + current.slice(end);

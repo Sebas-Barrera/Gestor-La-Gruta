@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/shared/FormField';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { AlertCircle, Package, Boxes, Link } from 'lucide-react';
 
 /**
@@ -183,7 +183,7 @@ export function UnknownBarcodeModal({
 
               {productType === 'box' && (
                 <FormField label="Piezas por caja" required error={boxError}>
-                  <Input
+                  <TouchInput
                     type="number"
                     min={2}
                     value={boxQuantity}

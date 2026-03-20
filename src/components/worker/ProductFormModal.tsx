@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Edit3 } from 'lucide-react';
 import { ImageUrlField } from '@/components/shared/ImageUrlField';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { urlToBase64, isBase64Image, isLocalPath } from '@/lib/imageUtils';
 import type { Product } from '@/types';
 
@@ -86,13 +86,13 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
           {/* SKU (readonly) */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">SKU</label>
-            <Input value={product.sku} disabled className="bg-gray-50 min-h-[44px]" />
+            <TouchInput value={product.sku} disabled className="bg-gray-50 min-h-[44px]" />
           </div>
 
           {/* Name */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Nombre</label>
-            <Input
+            <TouchInput
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className="min-h-[44px]"
@@ -103,7 +103,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">Categoría</label>
-              <Input
+              <TouchInput
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                 className="min-h-[44px]"
@@ -111,7 +111,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">Subcategoría</label>
-              <Input
+              <TouchInput
                 value={formData.subcategory}
                 onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
                 className="min-h-[44px]"
@@ -122,7 +122,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
           {/* Supplier */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Proveedor</label>
-            <Input
+            <TouchInput
               value={formData.supplier}
               onChange={(e) => setFormData(prev => ({ ...prev, supplier: e.target.value }))}
               className="min-h-[44px]"
@@ -132,7 +132,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
           {/* Price */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Precio ($)</label>
-            <Input
+            <TouchInput
               type="number"
               value={formData.price}
               onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
@@ -146,7 +146,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                 Stock Mínimo{formData.isWeightBased ? ` (${formData.weightUnit})` : ''}
               </label>
-              <Input
+              <TouchInput
                 type="number"
                 step={formData.isWeightBased ? '0.1' : '1'}
                 value={formData.minStock}
@@ -159,7 +159,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">
                 Stock Máximo{formData.isWeightBased ? ` (${formData.weightUnit})` : ''}
               </label>
-              <Input
+              <TouchInput
                 type="number"
                 step={formData.isWeightBased ? '0.1' : '1'}
                 value={formData.maxStock}
@@ -172,7 +172,7 @@ export function ProductFormModal({ open, onClose, product, onSave }: ProductForm
           {/* Barcode */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Código de Barras</label>
-            <Input
+            <TouchInput
               value={formData.barcode}
               onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
               placeholder="Opcional"

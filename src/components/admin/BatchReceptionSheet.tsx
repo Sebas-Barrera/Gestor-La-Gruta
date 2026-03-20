@@ -7,8 +7,8 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { TouchInput } from '@/components/shared/TouchInput';
+import { TouchTextarea } from '@/components/shared/TouchTextarea';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { ScaleOverlay } from '@/components/worker/ScaleOverlay';
 import {
@@ -180,13 +180,13 @@ export function BatchReceptionSheet({
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
+                  <TouchInput
                     placeholder="Escanea o escribe el código..."
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
                     onKeyDown={handleBarcodeKeyDown}
                     className="pl-10 min-h-[44px] text-base font-mono"
-                    autoFocus
+                    keyboardMode="numeric"
                   />
                 </div>
                 <Button
@@ -264,7 +264,7 @@ export function BatchReceptionSheet({
                 <label className="text-sm font-medium text-gray-700">
                   Notas <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
-                <Textarea
+                <TouchTextarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Observaciones sobre la recepción..."

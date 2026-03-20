@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Minus, Plus, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TouchTextarea } from '@/components/shared/TouchTextarea';
 import type { Product } from '@/types';
 
 interface StockAdjustmentModalProps {
@@ -101,7 +102,7 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
           {/* Notes */}
           <div>
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Notas (opcional)</label>
-            <textarea
+            <TouchTextarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Razón del ajuste..."

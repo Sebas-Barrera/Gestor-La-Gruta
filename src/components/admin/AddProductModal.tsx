@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { FormField } from '@/components/shared/FormField';
 import { ComboboxField } from '@/components/shared/ComboboxField';
 import { ImageUrlField } from '@/components/shared/ImageUrlField';
@@ -220,7 +220,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
 
           {/* Nombre */}
           <FormField label="Nombre del Producto" required error={errors.name}>
-            <Input
+            <TouchInput
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="Ej: Coca Cola 355ml"
@@ -230,7 +230,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
 
           {/* SKU */}
           <FormField label="SKU" required error={errors.sku}>
-            <Input
+            <TouchInput
               value={form.sku}
               onChange={(e) => updateField('sku', e.target.value)}
               placeholder="Ej: CC-355-001"
@@ -301,7 +301,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
           {/* Precio + Unidad */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Precio ($)" required error={errors.price}>
-              <Input
+              <TouchInput
                 type="number"
                 value={form.price || ''}
                 onChange={(e) => updateField('price', Number(e.target.value))}
@@ -310,7 +310,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
               />
             </FormField>
             <FormField label="Unidad" required error={errors.unit}>
-              <Input
+              <TouchInput
                 value={form.unit}
                 onChange={(e) => updateField('unit', e.target.value)}
                 placeholder="Ej: botella, lata, kg"
@@ -322,7 +322,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
           {/* Stock Inicial + Stock Mínimo + Stock Máximo */}
           <div className="grid grid-cols-3 gap-3">
             <FormField label="Stock Inicial">
-              <Input
+              <TouchInput
                 type="number"
                 value={form.stock || ''}
                 onChange={(e) => updateField('stock', Number(e.target.value))}
@@ -331,7 +331,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
               />
             </FormField>
             <FormField label="Stock Mínimo" required error={errors.minStock}>
-              <Input
+              <TouchInput
                 type="number"
                 value={form.minStock || ''}
                 onChange={(e) => updateField('minStock', Number(e.target.value))}
@@ -340,7 +340,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
               />
             </FormField>
             <FormField label="Stock Máximo" required error={errors.maxStock}>
-              <Input
+              <TouchInput
                 type="number"
                 value={form.maxStock || ''}
                 onChange={(e) => updateField('maxStock', Number(e.target.value))}
@@ -357,7 +357,7 @@ export function AddProductModal({ open, onClose, onSave, barId, barName, initial
 
           {/* Código de Barras */}
           <FormField label="Código de Barras">
-            <Input
+            <TouchInput
               value={form.barcode}
               onChange={(e) => updateField('barcode', e.target.value)}
               placeholder="Opcional"

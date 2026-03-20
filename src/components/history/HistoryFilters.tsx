@@ -1,5 +1,5 @@
 import { Search, X, CalendarIcon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/shared/DatePicker';
 import { parseLocalDate } from '@/lib/dates';
@@ -92,7 +92,7 @@ export function HistoryFilters({
           <label className="block text-xs font-medium text-gray-500 mb-1.5">Buscar</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
+            <TouchInput
               placeholder="Producto, admin, notas..."
               value={filters.search}
               onChange={(e) => onChange('search', e.target.value)}

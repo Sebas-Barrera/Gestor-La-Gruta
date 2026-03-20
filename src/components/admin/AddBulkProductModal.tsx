@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormField } from '@/components/shared/FormField';
 import { ComboboxField } from '@/components/shared/ComboboxField';
@@ -186,7 +186,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
 
           {/* Nombre */}
           <FormField label="Nombre del Producto" required error={errors.name}>
-            <Input
+            <TouchInput
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="Ej: Azúcar estándar, Limón, Aceite de oliva"
@@ -196,7 +196,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
 
           {/* SKU */}
           <FormField label="SKU" required error={errors.sku}>
-            <Input
+            <TouchInput
               value={form.sku}
               onChange={(e) => updateField('sku', e.target.value)}
               placeholder="Ej: AG-AZU-001, FV-LIM-001"
@@ -266,7 +266,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
           {/* Precio + Unidad de peso */}
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Precio ($)" required error={errors.price}>
-              <Input
+              <TouchInput
                 type="number"
                 value={form.price || ''}
                 onChange={(e) => updateField('price', Number(e.target.value))}
@@ -294,7 +294,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
           {/* Stock Inicial + Stock Mínimo + Stock Máximo */}
           <div className="grid grid-cols-3 gap-3">
             <FormField label={`Stock Inicial (${form.weightUnit})`}>
-              <Input
+              <TouchInput
                 type="number"
                 step="0.1"
                 value={form.stock || ''}
@@ -304,7 +304,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
               />
             </FormField>
             <FormField label={`Stock Mínimo (${form.weightUnit})`} required error={errors.minStock}>
-              <Input
+              <TouchInput
                 type="number"
                 step="0.1"
                 value={form.minStock || ''}
@@ -314,7 +314,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
               />
             </FormField>
             <FormField label={`Stock Máximo (${form.weightUnit})`} required error={errors.maxStock}>
-              <Input
+              <TouchInput
                 type="number"
                 step="0.1"
                 value={form.maxStock || ''}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/components/shared/FormField';
 import { KeyRound } from 'lucide-react';
@@ -82,16 +82,16 @@ export function CredentialFormModal({ open, onClose, onSave, credential, barId }
 
         <div className="space-y-4 pt-2">
           <FormField label="Etiqueta">
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej: Credencial Principal" />
+            <TouchInput value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej: Credencial Principal" />
           </FormField>
 
           <FormField label="Código de acceso (4 dígitos)" required error={errors.accessCode}>
-            <Input
+            <TouchInput
               value={accessCode}
               onChange={(e) => handleAccessCodeChange(e.target.value)}
               placeholder="0000"
               maxLength={4}
-              inputMode="numeric"
+              keyboardMode="numeric"
               className="font-mono text-center text-lg tracking-[0.5em]"
             />
           </FormField>

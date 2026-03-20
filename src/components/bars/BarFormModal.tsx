@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { FormField } from '@/components/shared/FormField';
 import { Store } from 'lucide-react';
 import type { Bar } from '@/types';
@@ -70,19 +70,19 @@ export function BarFormModal({ open, onClose, onSave, bar }: BarFormModalProps) 
 
         <div className="space-y-4 pt-2">
           <FormField label="Nombre del Bar" required error={errors.name}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Bar Central" />
+            <TouchInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Bar Central" />
           </FormField>
 
           <FormField label="Ubicación" required error={errors.location}>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Planta Baja" />
+            <TouchInput value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Planta Baja" />
           </FormField>
 
           <FormField label="Teléfono">
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 555-0101" />
+            <TouchInput value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 555-0101" keyboardMode="numeric" />
           </FormField>
 
           <FormField label="Encargado">
-            <Input value={manager} onChange={(e) => setManager(e.target.value)} placeholder="Ej: Juan Pérez" />
+            <TouchInput value={manager} onChange={(e) => setManager(e.target.value)} placeholder="Ej: Juan Pérez" />
           </FormField>
 
           <div className="flex gap-3 pt-2">

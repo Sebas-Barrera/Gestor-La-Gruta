@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 
 export interface FilterConfig {
   type: 'select' | 'search' | 'page-size';
@@ -24,7 +24,7 @@ export function FilterBar({ filters, values, onChange }: FilterBarProps) {
             return (
               <div key={filter.key} className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
+                <TouchInput
                   placeholder={filter.placeholder || `Buscar...`}
                   value={values[filter.key] || ''}
                   onChange={(e) => onChange(filter.key, e.target.value)}

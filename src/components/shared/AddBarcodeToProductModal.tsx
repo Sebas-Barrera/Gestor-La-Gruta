@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/shared/FormField';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Link, Search, Package } from 'lucide-react';
 import type { Product } from '@/types';
 
@@ -151,7 +151,7 @@ export function AddBarcodeToProductModal({
               <FormField label="Buscar producto" required error={errors.product}>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
+                  <TouchInput
                     placeholder="Buscar por nombre, SKU o código..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -215,7 +215,7 @@ export function AddBarcodeToProductModal({
 
               {/* Paso 2: Configurar barcode */}
               <FormField label="Piezas por escaneo" required error={errors.quantityPerScan}>
-                <Input
+                <TouchInput
                   type="number"
                   min={1}
                   value={form.quantityPerScan}
@@ -228,7 +228,7 @@ export function AddBarcodeToProductModal({
               </FormField>
 
               <FormField label="Etiqueta" required error={errors.label}>
-                <Input
+                <TouchInput
                   value={form.label}
                   onChange={(e) => updateField('label', e.target.value)}
                   placeholder="Ej: Caja 24 pzas, Six Pack, Individual"

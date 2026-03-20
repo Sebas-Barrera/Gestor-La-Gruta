@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Check, ChevronDown, Plus } from 'lucide-react';
+import { TouchInput } from '@/components/shared/TouchInput';
 import {
   Command,
   CommandEmpty,
@@ -138,11 +139,11 @@ export function ComboboxField({
           <Command shouldFilter={false}>
             {/* Input de búsqueda personalizado */}
             <div className="px-3 py-2.5 border-b border-gray-100">
-              <input
+              <TouchInput
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={placeholder}
-                className="w-full text-sm outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
+                className="w-full text-sm outline-none bg-transparent text-gray-900 placeholder:text-gray-400 border-0 shadow-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto p-0 rounded-none"
               />
             </div>
 

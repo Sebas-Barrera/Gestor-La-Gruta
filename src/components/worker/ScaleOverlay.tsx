@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Scale, Search, ArrowDownCircle, ArrowUpCircle, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/types';
@@ -93,7 +93,7 @@ export function ScaleOverlay({ open, onClose, isAddMode, products, onProductWeig
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
+                <TouchInput
                   placeholder="Buscar producto a granel..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -161,7 +161,7 @@ export function ScaleOverlay({ open, onClose, isAddMode, products, onProductWeig
                 <Scale className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                 <p className="text-xs text-gray-400 mb-3">Peso detectado (simulación)</p>
                 <div className="flex items-center justify-center gap-2">
-                  <Input
+                  <TouchInput
                     type="number"
                     step="0.01"
                     value={weight}

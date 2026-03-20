@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Bell,
   Settings,
-  HelpCircle,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,7 +46,6 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
   const navItems = role === 'worker' ? workerNavItems : adminNavItems;
 
   const bottomItems: NavItem[] = [
-    ...(role === 'admin' ? [{ icon: HelpCircle, label: 'Ayuda', id: 'help' }] : []),
     { icon: LogOut, label: 'Cerrar Sesión', id: 'logout' },
   ];
 

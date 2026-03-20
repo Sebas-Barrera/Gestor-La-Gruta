@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/components/shared/FormField';
 import { ShieldCheck } from 'lucide-react';
@@ -91,7 +91,7 @@ export function AdminFormModal({ open, onClose, onSave, admin }: AdminFormModalP
 
         <div className="space-y-4 pt-2">
           <FormField label="Nombre completo" required error={errors.name}>
-            <Input
+            <TouchInput
               value={name}
               onChange={(e) => { setName(e.target.value); clearError('name'); }}
               placeholder="Ej: Juan Pérez"
@@ -99,21 +99,22 @@ export function AdminFormModal({ open, onClose, onSave, admin }: AdminFormModalP
           </FormField>
 
           <FormField label="Código de acceso (4 dígitos)" required error={errors.accessCode}>
-            <Input
+            <TouchInput
               value={accessCode}
               onChange={(e) => handleAccessCodeChange(e.target.value)}
               placeholder="0000"
               maxLength={4}
-              inputMode="numeric"
+              keyboardMode="numeric"
               className="font-mono text-center text-lg tracking-[0.5em]"
             />
           </FormField>
 
           <FormField label="Teléfono">
-            <Input
+            <TouchInput
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="555-0000"
+              keyboardMode="numeric"
             />
           </FormField>
 

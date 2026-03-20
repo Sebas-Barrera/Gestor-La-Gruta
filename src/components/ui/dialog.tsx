@@ -48,6 +48,9 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onPointerDownOutside,
+  onInteractOutside,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -61,6 +64,36 @@ function DialogContent({
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none sm:max-w-lg",
           className
         )}
+        onOpenAutoFocus={(e) => {
+          // Si hay un TouchInput dentro del dialog, forzar foco en él
+          // en vez de dejar que Radix ponga foco en el close button o en sí mismo.
+          const content = e.currentTarget as HTMLElement;
+          const touchInput = content.querySelector('[data-touch-input]') as HTMLElement | null;
+          if (touchInput) {
+            e.preventDefault();
+            touchInput.focus();
+          }
+          onOpenAutoFocus?.(e);
+        }}
+        onPointerDownOutside={(e) => {
+          // Si el tap es en el teclado virtual, NO cerrar el dialog.
+          // Radix respeta e.preventDefault() y omite el cierre.
+          const target = e.detail.originalEvent.target as Element | null;
+          if (target?.closest('[data-keyboard-container]')) {
+            e.preventDefault();
+            return;
+          }
+          onPointerDownOutside?.(e);
+        }}
+        onInteractOutside={(e) => {
+          // Cubre tanto pointer events como focus events fuera del dialog
+          const target = (e.detail.originalEvent as Event | null)?.target as Element | null;
+          if (target?.closest?.('[data-keyboard-container]')) {
+            e.preventDefault();
+            return;
+          }
+          onInteractOutside?.(e);
+        }}
         {...props}
       >
         {children}

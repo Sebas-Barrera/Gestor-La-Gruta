@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Switch } from '@/components/ui/switch';
 import { FormField } from '@/components/shared/FormField';
 import { UserPlus, RefreshCw } from 'lucide-react';
@@ -90,12 +90,12 @@ export function WorkerFormModal({ open, onClose, onSave, worker, bars, currentBa
 
         <div className="space-y-4 pt-2">
           <FormField label="Nombre completo" required error={errors.name}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Juan Pérez" />
+            <TouchInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Juan Pérez" />
           </FormField>
 
           <FormField label="PIN (4 dígitos)" required error={errors.pin}>
             <div className="flex gap-2">
-              <Input
+              <TouchInput
                 value={pin}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 4);
@@ -103,6 +103,7 @@ export function WorkerFormModal({ open, onClose, onSave, worker, bars, currentBa
                 }}
                 placeholder="0000"
                 maxLength={4}
+                keyboardMode="numeric"
                 className="font-mono text-lg tracking-widest"
               />
               <Button type="button" variant="outline" onClick={generatePin} className="shrink-0 gap-1">
@@ -113,7 +114,7 @@ export function WorkerFormModal({ open, onClose, onSave, worker, bars, currentBa
           </FormField>
 
           <FormField label="Teléfono">
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="555-0000" />
+            <TouchInput value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="555-0000" keyboardMode="numeric" />
           </FormField>
 
           <FormField label="Asignar a Bares" required error={errors.bars}>

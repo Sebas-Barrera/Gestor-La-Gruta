@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { FormField } from '@/components/shared/FormField';
 import { User } from 'lucide-react';
 
@@ -55,7 +55,7 @@ export function EditProfileModal({ open, onClose, onSave, profile }: EditProfile
 
         <div className="space-y-4 pt-2">
           <FormField label="Nombre completo" required error={errors.name}>
-            <Input
+            <TouchInput
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -66,10 +66,11 @@ export function EditProfileModal({ open, onClose, onSave, profile }: EditProfile
           </FormField>
 
           <FormField label="Teléfono">
-            <Input
+            <TouchInput
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="555-0000"
+              keyboardMode="numeric"
             />
           </FormField>
 

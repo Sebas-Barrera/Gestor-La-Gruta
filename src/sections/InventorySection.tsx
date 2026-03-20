@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Grid3X3, List, Eye, ScanLine, Scale, ClipboardCheck } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { Button } from '@/components/ui/button';
 import { ProductInfoPanel } from '@/components/ProductInfoPanel';
 import { InventoryGrid } from '@/components/InventoryGrid';
@@ -508,7 +508,7 @@ export function InventorySection() {
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
+              <TouchInput
                 placeholder="Buscar por SKU o nombre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

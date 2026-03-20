@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ImageIcon, X, Loader2, AlertCircle } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { TouchInput } from '@/components/shared/TouchInput';
 import { FormField } from '@/components/shared/FormField';
 import { cn } from '@/lib/utils';
 import { isBase64Image, isValidImageUrl } from '@/lib/imageUtils';
@@ -73,7 +73,7 @@ export function ImageUrlField({
       <div className="space-y-2">
         {/* Input de URL */}
         <div className="relative">
-          <Input
+          <TouchInput
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Pega la URL de la imagen (ej: https://...)"

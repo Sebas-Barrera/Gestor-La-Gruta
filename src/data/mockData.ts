@@ -1,4 +1,20 @@
-import type { Product, Bar, Sale, Activity, InventoryAlert, DashboardStats, Worker, BarCredential, InventoryMovement, AdminAccount, ProductBarcode } from '@/types';
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * DATOS MOCK TEMPORALES - Solo para desarrollo y pruebas
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * TODO: Estos datos serán reemplazados por llamadas al backend real.
+ *
+ * Cuando el backend esté listo:
+ * 1. Reemplazar imports con fetch/axios a endpoints en BACKEND_SPEC.md
+ * 2. Usar React Query o SWR para cache
+ * 3. Mantener solo catalogDefaults.ts (categorías, proveedores)
+ *
+ * Ver BACKEND_SPEC.md para especificación completa de API.
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+
+import type { Product, Bar, Sale, Activity, InventoryAlert, DashboardStats, Worker, InventoryMovement, AdminAccount, ProductBarcode } from '@/types';
 
 export const bars: Bar[] = [
   { id: '1', name: 'Bar Central', location: 'Planta Baja', isActive: true, manager: 'Juan Pérez', phone: '555-0101' },
@@ -605,13 +621,6 @@ export const workers: Worker[] = [
   },
 ];
 
-export const barCredentials: BarCredential[] = [
-  { id: 'bc1', barId: '1', accessCode: '1111', isActive: true, label: 'Credencial Principal' },
-  { id: 'bc2', barId: '2', accessCode: '2222', isActive: true, label: 'Credencial Principal' },
-  { id: 'bc3', barId: '3', accessCode: '3333', isActive: true, label: 'Credencial Principal' },
-  { id: 'bc4', barId: '4', accessCode: '4444', isActive: true, label: 'Credencial Principal' },
-  { id: 'bc5', barId: '1', accessCode: '1100', isActive: true, label: 'Turno Noche' },
-];
 
 export const adminAccounts: AdminAccount[] = [
   {

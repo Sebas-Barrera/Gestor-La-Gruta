@@ -46,7 +46,7 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -117,6 +117,7 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Razón del ajuste..."
               className="w-full min-h-[80px] p-3 rounded-lg border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              preventKeyboardOnFocus
             />
           </div>
 

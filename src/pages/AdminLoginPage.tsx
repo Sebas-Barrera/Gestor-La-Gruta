@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CodeLoginForm } from '@/components/shared/CodeLoginForm';
 import { useAuth } from '@/contexts/AuthContext';
+import lagrutaLogo from '@/assets/lagruta-logo.png';
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
@@ -26,9 +27,7 @@ export function AdminLoginPage() {
       title="Panel de Administración"
       subtitle="Ingresa tu código de acceso"
       icon={
-        <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-          <span className="text-white font-bold text-2xl">B</span>
-        </div>
+        <img src={lagrutaLogo} alt="La Gruta" className="h-16 object-contain" />
       }
       onSubmit={handleLogin}
       altLinkText="Acceso Almacén →"

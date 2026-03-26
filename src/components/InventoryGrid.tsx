@@ -141,8 +141,8 @@ export function InventoryGrid({ products, onSlotClick, delay = 0 }: InventoryGri
                   <ProductImage product={slot.product} size="md" className="mb-2" />
 
                   {/* Product Info */}
-                  <p className="text-xs font-medium text-gray-700 text-center line-clamp-1 px-1">
-                    {slot.product.name.split(' ')[0]}
+                  <p className="text-xs font-medium text-gray-700 text-center line-clamp-2 px-1 leading-tight">
+                    {slot.product.name}
                   </p>
                   
                   <div className="flex items-center gap-1 mt-1">

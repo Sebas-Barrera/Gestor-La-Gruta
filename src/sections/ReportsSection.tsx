@@ -135,13 +135,23 @@ export function ReportsSection() {
             Historial completo de entradas y salidas de inventario
           </p>
         </div>
-        {/* Backend: POST /api/reports/export con los filtros actuales */}
+        {/* 
+          TODO Backend: EXPORTACIÓN DE REPORTES
+          Al construir el archivo Excel/CSV al presionar este botón, el documento DEBE de exportarse 
+          en base a ESPECÍFICAMENTE la configuración que se tiene en este componente en este momento.
+          Es decir, la consulta de exportación debe considerar:
+          1. El bar seleccionado actualmente (puede ser "all" o un ID específico).
+          2. Los filtros en memoria aplicados: Trabajador seleccionado, Producto específico, Tipo (in/out).
+          3. Filtros por fechas personalizadas, y términos de búsqueda libre.
+
+          Por ejemplo, si el usuario seleccionó "Todos los bares" y fecha "13/03 a 14/03", 
+          el Excel resultante DEBE devolver exactamente esos datos tal cual se estuvieran viendo en pantalla.
+        */}
         <Button
           variant="outline"
           className="gap-2 hover:border-blue-500 hover:text-blue-600"
           onClick={() => {
-            // TODO Backend: implementar exportación con filtros actuales
-            // Params: { barId: selectedBarId, ...filters }
+            // endpoint export params -> { barId: selectedBarId, ...filters }
           }}
         >
           <FileDown className="w-4 h-4" />

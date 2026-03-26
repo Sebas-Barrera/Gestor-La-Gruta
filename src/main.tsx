@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { InventoryProvider } from '@/contexts/InventoryContext'
 import { KeyboardProvider } from '@/contexts/KeyboardContext'
 import './index.css'
 import App from './App.tsx'
@@ -17,7 +18,9 @@ createRoot(document.getElementById('root')!).render(
     <KeyboardProvider>
       <HashRouter>
         <AuthProvider>
-          <App />
+          <InventoryProvider>
+            <App />
+          </InventoryProvider>
         </AuthProvider>
       </HashRouter>
     </KeyboardProvider>

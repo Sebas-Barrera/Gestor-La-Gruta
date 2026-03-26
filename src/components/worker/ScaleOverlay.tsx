@@ -99,6 +99,7 @@ export function ScaleOverlay({ open, onClose, isAddMode, products, onProductWeig
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 min-h-[44px] text-base"
                   autoFocus
+                  preventKeyboardOnFocus
                 />
               </div>
 
@@ -169,6 +170,7 @@ export function ScaleOverlay({ open, onClose, isAddMode, products, onProductWeig
                     placeholder="0.00"
                     className="w-32 text-center text-2xl font-bold min-h-[50px]"
                     autoFocus
+                    preventKeyboardOnFocus
                   />
                   <span className="text-lg text-gray-500">{selectedProduct.weightUnit}</span>
                 </div>

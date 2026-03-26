@@ -1,32 +1,27 @@
 import { useState } from 'react';
-import { Store, Plus, MapPin, Users, Package, TrendingUp, Edit2, Trash2, Info, KeyRound } from 'lucide-react';
+import { Store, Plus, MapPin, Users, Package, TrendingUp, Edit2, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBarManagement } from '@/hooks/useBarManagement';
 import { BarFormModal } from '@/components/bars/BarFormModal';
 import { BarInfoTab } from '@/components/bars/BarInfoTab';
 import { BarPersonalTab } from '@/components/bars/BarPersonalTab';
-import { BarCredentialsTab } from '@/components/bars/BarCredentialsTab';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { products } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { Bar, Worker, BarCredential } from '@/types';
+import type { Bar, Worker } from '@/types';
 
 export function BarsSection() {
   const {
     bars,
     workers,
-    credentials,
     addBar,
     updateBar,
     deleteBar,
     addWorker,
     updateWorker,
     deleteWorker,
-    addCredential,
-    updateCredential,
-    deleteCredential,
   } = useBarManagement();
 
   const [selectedBarId, setSelectedBarId] = useState(bars[0]?.id ?? '');
@@ -81,12 +76,11 @@ export function BarsSection() {
   };
 
   /**
-   * Eliminar un bar y sus credenciales asociadas.
+   * Eliminar un bar.
    *
    * Backend:
    *   DELETE /api/bars/:barId
    *   Response: { success: boolean }
-   *   Nota: El backend debe eliminar en cascada las credenciales (BarCredential) asociadas.
    */
   const handleDeleteBar = () => {
     if (!deleteTarget) return;
@@ -104,7 +98,7 @@ export function BarsSection() {
     }
 
     toast.success(`Bar "${deletedName}" eliminado`, {
-      description: 'El bar y sus credenciales asociadas fueron eliminados',
+      description: 'El bar fue eliminado correctamente',
     });
   };
 
@@ -168,66 +162,7 @@ export function BarsSection() {
     });
   };
 
-  // ─── Wrappers de Credenciales con notificaciones ───
 
-  /**
-   * Crear una credencial de acceso para un bar.
-   *
-   * Backend:
-   *   POST /api/bar-credentials
-   *   Body: Omit<BarCredential, 'id'> (barId, accessCode, isActive, label?)
-   *   Response: BarCredential
-   *   Nota: accessCode debe ser UNIQUE en toda la tabla.
-   */
-  const handleAddCredential = (data: Omit<BarCredential, 'id'>) => {
-    addCredential(data);
-
-    console.log('[Credentials:Create] Datos para backend:', { credential: data });
-
-    toast.success('Credencial creada', {
-      description: `${data.label || 'Nueva credencial'} · Código de acceso asignado`,
-    });
-  };
-
-  /**
-   * Actualizar una credencial de acceso.
-   *
-   * Backend:
-   *   PATCH /api/bar-credentials/:credentialId
-   *   Body: Partial<BarCredential>
-   *   Response: BarCredential (actualizada)
-   */
-  const handleUpdateCredential = (id: string, data: Partial<BarCredential>) => {
-    updateCredential(id, data);
-
-    console.log('[Credentials:Update] Datos para backend:', { credentialId: id, updates: data });
-
-    toast.success('Credencial actualizada', {
-      description: 'Los cambios han sido guardados',
-    });
-  };
-
-  /**
-   * Eliminar una credencial de acceso.
-   *
-   * Backend:
-   *   DELETE /api/bar-credentials/:credentialId
-   *   Response: { success: boolean }
-   */
-  const handleDeleteCredential = (id: string) => {
-    const cred = credentials.find(c => c.id === id);
-
-    console.log('[Credentials:Delete] Datos para backend:', {
-      credentialId: id,
-      label: cred?.label,
-    });
-
-    deleteCredential(id);
-
-    toast.success('Credencial eliminada', {
-      description: `${cred?.label || 'Credencial'} fue removida del bar`,
-    });
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -390,10 +325,6 @@ export function BarsSection() {
                 <Users className="w-4 h-4" />
                 Personal
               </TabsTrigger>
-              <TabsTrigger value="credentials" className="gap-1.5">
-                <KeyRound className="w-4 h-4" />
-                Credenciales
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="info">
@@ -415,16 +346,6 @@ export function BarsSection() {
               />
             </TabsContent>
 
-            <TabsContent value="credentials">
-              <BarCredentialsTab
-                barId={selectedBar.id}
-                credentials={credentials}
-                onAddCredential={handleAddCredential}
-                onUpdateCredential={handleUpdateCredential}
-                onDeleteCredential={handleDeleteCredential}
-              />
-            </TabsContent>
-
           </Tabs>
         </div>
       )}
@@ -443,7 +364,7 @@ export function BarsSection() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteBar}
         title="Eliminar Bar"
-        description={`¿Estás seguro de eliminar "${deleteTarget?.name}"? Se eliminarán todas las credenciales asociadas. Esta acción no se puede deshacer.`}
+        description={`¿Estás seguro de eliminar "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
       />
     </div>
   );

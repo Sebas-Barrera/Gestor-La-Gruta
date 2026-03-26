@@ -83,6 +83,13 @@ export interface Product {
   weightUnit?: 'kg' | 'g' | 'ml' | 'L';
 }
 
+/**
+ * Bar/punto de venta.
+ *
+ * DB: tabla `bars` (id UUID PK, name VARCHAR NOT NULL, location VARCHAR, isActive BOOLEAN DEFAULT true)
+ * Relaciones: 1:N con products (barId FK), N:N con workers (tabla pivot worker_bars)
+ * Endpoints: GET/POST/PUT/DELETE /api/bars
+ */
 export interface Bar {
   id: string;
   name: string;
@@ -93,6 +100,12 @@ export interface Bar {
   phone?: string;
 }
 
+/**
+ * Venta/salida de producto.
+ *
+ * DB: tabla `sales` (id UUID PK, productId FK, quantity DECIMAL, total DECIMAL, timestamp TIMESTAMP)
+ * Endpoints: GET /api/sales?barId=X&dateFrom=...&dateTo=..., POST /api/sales
+ */
 export interface Sale {
   id: string;
   productId: string;
@@ -105,6 +118,12 @@ export interface Sale {
   sellerName?: string;
 }
 
+/**
+ * Actividad/evento del sistema (log de auditoría).
+ *
+ * DB: tabla `activities` (id UUID PK, type ENUM, message TEXT, timestamp TIMESTAMP)
+ * Endpoints: GET /api/activities?barId=X&type=Y&limit=50
+ */
 export interface Activity {
   id: string;
   type: 'stock_in' | 'stock_out' | 'alert' | 'login' | 'inventory';
@@ -117,6 +136,12 @@ export interface Activity {
   productName?: string;
 }
 
+/**
+ * Alerta de inventario (stock bajo/agotado).
+ *
+ * DB: tabla `inventory_alerts` (id UUID PK, productId FK, type ENUM, currentStock DECIMAL, threshold DECIMAL)
+ * Endpoints: GET /api/inventory-alerts?barId=X&resolved=false, PUT /api/inventory-alerts/:id/resolve
+ */
 export interface InventoryAlert {
   id: string;
   productId: string;
@@ -129,6 +154,13 @@ export interface InventoryAlert {
   barName?: string;
 }
 
+/**
+ * Estadísticas agregadas del dashboard.
+ *
+ * DB: NO tiene tabla propia - se calcula con queries agregadas
+ * Endpoint: GET /api/dashboard/stats?barId=X
+ * Cálculos: totalProducts = COUNT(*), inventoryValue = SUM(stock × price), etc.
+ */
 export interface DashboardStats {
   totalProducts: number;
   inventoryValue: number;
@@ -162,45 +194,6 @@ export interface Worker {
   createdAt: string;
 }
 
-/**
- * Credencial de acceso de un bar.
- *
- * Tabla sugerida: `bar_credentials`
- * ────────────────────────────────────────────────────────────────
- * | Columna       | Tipo DB                              | Notas                              |
- * |---------------|--------------------------------------|------------------------------------|
- * | id            | UUID / SERIAL PK                     | Generado por el backend            |
- * | barId         | FK → bars.id NOT NULL                 | Bar al que pertenece               |
- * | accessCode    | CHAR(4) UNIQUE NOT NULL               | Código numérico de 4 dígitos       |
- * | isActive      | BOOLEAN DEFAULT true                  | Credencial habilitada              |
- * | label         | VARCHAR(100) NULLABLE                 | Etiqueta descriptiva               |
- * ────────────────────────────────────────────────────────────────
- *
- * Validaciones:
- *   - accessCode debe ser exactamente 4 dígitos numéricos (regex: /^\d{4}$/)
- *   - accessCode debe ser UNIQUE en la tabla
- *   - No debe coincidir con accessCode de admin_accounts (validar en backend)
- *
- * Relaciones:
- *   - bars (id) → 1:N con bar_credentials.barId
- *
- * Endpoints sugeridos:
- *   GET    /api/bars/:barId/credentials     → lista de credenciales del bar
- *   POST   /api/bars/:barId/credentials     → crear credencial (body: accessCode, isActive, label?)
- *   PUT    /api/bar-credentials/:id         → editar credencial
- *   DELETE /api/bar-credentials/:id         → eliminar credencial
- */
-export interface BarCredential {
-  id: string;
-  /** FK al bar al que pertenece esta credencial */
-  barId: string;
-  /** Código de acceso de 4 dígitos numéricos — UNIQUE, usado para login del almacén */
-  accessCode: string;
-  /** Si la credencial está habilitada para iniciar sesión */
-  isActive: boolean;
-  /** Etiqueta descriptiva (ej: 'Turno Noche', 'Credencial Principal') */
-  label?: string;
-}
 
 /**
  * Datos para crear un producto a granel (medido por peso/volumen).
@@ -266,7 +259,6 @@ export interface CreateBulkProductData {
  * Validaciones:
  *   - accessCode debe ser exactamente 4 dígitos numéricos (regex: /^\d{4}$/)
  *   - accessCode debe ser UNIQUE en la tabla
- *   - No debe coincidir con accessCode de bar_credentials (validar en backend)
  *
  * Relaciones:
  *   - Ninguna FK directa. Los admins tienen acceso global.

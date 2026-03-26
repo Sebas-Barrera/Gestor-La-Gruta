@@ -149,13 +149,23 @@ export function HistorySection() {
             Registro completo de todos los ingresos de mercancía
           </p>
         </div>
-        {/* Backend: POST /api/inventory-history/export con los filtros actuales */}
+        {/* 
+          TODO Backend: EXPORTACIÓN DE HISTORIAL
+          Al construir el archivo Excel/CSV al presionar este botón, el documento DEBE de exportarse 
+          en base a ESPECÍFICAMENTE la configuración que se tiene en este componente en este momento.
+          Es decir, la consulta de exportación debe considerar:
+          1. El bar seleccionado actualmente (puede ser "all" o un ID específico).
+          2. Los filtros en memoria aplicados: Admin que hizo el movimiento, Categoría, Tipo de entrada.
+          3. Filtros por fechas personalizadas, y términos de búsqueda libre.
+
+          Por ejemplo, si el usuario seleccionó "Bar Central" y fecha "13/03 a 14/03", 
+          el Excel resultante DEBE devolver exactamente esos datos tal cual se estuvieran viendo en pantalla.
+        */}
         <Button
           variant="outline"
           className="gap-2 hover:border-blue-500 hover:text-blue-600"
           onClick={() => {
-            // TODO Backend: implementar exportación con filtros actuales
-            // Params: { barId: selectedBarId, ...filters }
+            // endpoint export params -> { barId: selectedBarId, ...filters }
             console.log('[HistoryExport] Datos para backend:', {
               barId: selectedBarId,
               ...filters,

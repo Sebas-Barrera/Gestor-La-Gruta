@@ -50,12 +50,13 @@ interface AddBarcodeToProductModalProps {
 }
 
 interface FormState {
-  quantityPerScan: number;
+  /** Raw string while editing — allows empty input. Parsed to number on submit. */
+  quantityPerScan: string;
   label: string;
 }
 
 const INITIAL_FORM: FormState = {
-  quantityPerScan: 1,
+  quantityPerScan: '1',
   label: '',
 };
 
@@ -83,10 +84,11 @@ export function AddBarcodeToProductModal({
 
   // Generar label automático al cambiar quantity
   useEffect(() => {
-    if (form.quantityPerScan === 1) {
+    const qty = Number(form.quantityPerScan) || 0;
+    if (qty === 1) {
       setForm(prev => ({ ...prev, label: 'Individual' }));
-    } else if (form.quantityPerScan > 1 && !form.label.trim()) {
-      setForm(prev => ({ ...prev, label: `Caja ${form.quantityPerScan} pzas` }));
+    } else if (qty > 1 && !form.label.trim()) {
+      setForm(prev => ({ ...prev, label: `Caja ${qty} pzas` }));
     }
   }, [form.quantityPerScan]);
 
@@ -108,7 +110,8 @@ export function AddBarcodeToProductModal({
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!selectedProduct) errs.product = 'Selecciona un producto';
-    if (form.quantityPerScan < 1) errs.quantityPerScan = 'Debe ser al menos 1';
+    const qty = Number(form.quantityPerScan) || 0;
+    if (qty < 1) errs.quantityPerScan = 'Debe ser al menos 1';
     if (!form.label.trim()) errs.label = 'La etiqueta es obligatoria';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -120,7 +123,7 @@ export function AddBarcodeToProductModal({
     onSave({
       productId: selectedProduct.id,
       barcode,
-      quantityPerScan: form.quantityPerScan,
+      quantityPerScan: Math.max(1, Number(form.quantityPerScan) || 1),
       label: form.label.trim(),
     });
     onClose();
@@ -217,9 +220,8 @@ export function AddBarcodeToProductModal({
               <FormField label="Piezas por escaneo" required error={errors.quantityPerScan}>
                 <TouchInput
                   type="number"
-                  min={1}
                   value={form.quantityPerScan}
-                  onChange={(e) => updateField('quantityPerScan', Math.max(1, Number(e.target.value)))}
+                  onChange={(e) => updateField('quantityPerScan', e.target.value)}
                   className="min-h-[44px]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -237,7 +239,7 @@ export function AddBarcodeToProductModal({
               </FormField>
 
               {/* Preview */}
-              {form.quantityPerScan > 1 && (
+              {(Number(form.quantityPerScan) || 0) > 1 && (
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-xs text-gray-500 mb-1">Vista previa</p>
                   <p className="text-sm text-gray-900">

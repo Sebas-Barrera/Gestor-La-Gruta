@@ -1,20 +1,33 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { TouchInput } from '@/components/shared/TouchInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormField } from '@/components/shared/FormField';
-import { ComboboxField } from '@/components/shared/ComboboxField';
-import { ImageUrlField } from '@/components/shared/ImageUrlField';
-import { Scale } from 'lucide-react';
-import { urlToBase64, isBase64Image, isLocalPath } from '@/lib/imageUtils';
+import { useState, useEffect, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { TouchInput } from "@/components/shared/TouchInput";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FormField } from "@/components/shared/FormField";
+import { ComboboxField } from "@/components/shared/ComboboxField";
+import { ImageUrlField } from "@/components/shared/ImageUrlField";
+import { Scale } from "lucide-react";
+import { urlToBase64, isBase64Image, isLocalPath } from "@/lib/imageUtils";
+import { generateSku } from "@/lib/skuGenerator";
+import { useInventory } from "@/contexts/InventoryContext";
 import {
   BULK_CATEGORIES,
   BULK_SUBCATEGORIES,
   BULK_SUPPLIERS,
   WEIGHT_UNITS,
-} from '@/data/catalogDefaults';
-import type { CreateBulkProductData } from '@/types';
+} from "@/data/catalogDefaults";
+import type { CreateBulkProductData } from "@/types";
 
 /**
  * Modal dedicado para registrar productos a granel (peso/volumen).
@@ -49,27 +62,48 @@ interface AddBulkProductModalProps {
 }
 
 const INITIAL_FORM: CreateBulkProductData = {
-  name: '',
-  sku: '',
-  category: '',
-  subcategory: '',
-  supplier: '',
+  name: "",
+  sku: "",
+  category: "",
+  subcategory: "",
+  supplier: "",
   price: 0,
   stock: 0,
   minStock: 1,
   maxStock: 10,
-  weightUnit: 'kg',
-  barId: '',
-  image: '',
+  weightUnit: "kg",
+  barId: "",
+  image: "",
 };
 
-export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: AddBulkProductModalProps) {
-  const [form, setForm] = useState<CreateBulkProductData>({ ...INITIAL_FORM, barId });
+export function AddBulkProductModal({
+  open,
+  onClose,
+  onSave,
+  barId,
+  barName,
+}: AddBulkProductModalProps) {
+  const { products: allProducts } = useInventory();
+  const [form, setForm] = useState<CreateBulkProductData>({
+    ...INITIAL_FORM,
+    barId,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Auto-generar SKU cuando cambian nombre o categoría
+  useEffect(() => {
+    if (form.name.trim() && form.category.trim()) {
+      const existingSkus = allProducts.map((p) => p.sku);
+      const sku = generateSku(form.category, form.name, existingSkus);
+      setForm((prev) => ({ ...prev, sku }));
+    }
+  }, [form.name, form.category, allProducts]);
 
   // --- Catálogos con soporte para valores nuevos agregados en sesión ---
   const [addedCategories, setAddedCategories] = useState<string[]>([]);
-  const [addedSubcategories, setAddedSubcategories] = useState<Record<string, string[]>>({});
+  const [addedSubcategories, setAddedSubcategories] = useState<
+    Record<string, string[]>
+  >({});
   const [addedSuppliers, setAddedSuppliers] = useState<string[]>([]);
 
   const categories = useMemo(
@@ -96,10 +130,13 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
     }
   }, [open, barId]);
 
-  const updateField = <K extends keyof CreateBulkProductData>(key: K, value: CreateBulkProductData[K]) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+  const updateField = <K extends keyof CreateBulkProductData>(
+    key: K,
+    value: CreateBulkProductData[K],
+  ) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const next = { ...prev };
         delete next[key];
         return next;
@@ -109,15 +146,19 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = 'El nombre es obligatorio';
-    if (!form.sku.trim()) errs.sku = 'El SKU es obligatorio';
-    if (!form.category.trim()) errs.category = 'La categoría es obligatoria';
-    if (!form.subcategory.trim()) errs.subcategory = 'La subcategoría es obligatoria';
-    if (!form.supplier.trim()) errs.supplier = 'El proveedor es obligatorio';
-    if (form.price <= 0) errs.price = 'El precio debe ser mayor a 0';
-    if (form.minStock < 0) errs.minStock = 'El stock mínimo no puede ser negativo';
-    if (form.maxStock <= 0) errs.maxStock = 'El stock máximo debe ser mayor a 0';
-    if (form.minStock >= form.maxStock) errs.minStock = 'El stock mínimo debe ser menor al máximo';
+    if (!form.name.trim()) errs.name = "El nombre es obligatorio";
+    if (!form.sku.trim()) errs.sku = "El SKU es obligatorio";
+    if (!form.category.trim()) errs.category = "La categoría es obligatoria";
+    if (!form.subcategory.trim())
+      errs.subcategory = "La subcategoría es obligatoria";
+    if (!form.supplier.trim()) errs.supplier = "El proveedor es obligatorio";
+    if (form.price <= 0) errs.price = "El precio debe ser mayor a 0";
+    if (form.minStock < 0)
+      errs.minStock = "El stock mínimo no puede ser negativo";
+    if (form.maxStock <= 0)
+      errs.maxStock = "El stock máximo debe ser mayor a 0";
+    if (form.minStock >= form.maxStock)
+      errs.minStock = "El stock mínimo debe ser menor al máximo";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -129,7 +170,7 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
 
     setIsSaving(true);
 
-    let imageValue = (form.image || '').trim();
+    let imageValue = (form.image || "").trim();
 
     // Convertir URL externa a base64 para soporte offline
     if (imageValue && !isBase64Image(imageValue) && !isLocalPath(imageValue)) {
@@ -179,8 +220,12 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
           <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
             <Scale className="w-4 h-4 text-purple-600" />
             <div>
-              <p className="text-xs text-purple-600 font-medium">Producto a granel</p>
-              <p className="text-sm font-semibold text-purple-900">Se medirá por peso / volumen</p>
+              <p className="text-xs text-purple-600 font-medium">
+                Producto a granel
+              </p>
+              <p className="text-sm font-semibold text-purple-900">
+                Se medirá por peso / volumen
+              </p>
             </div>
           </div>
 
@@ -188,19 +233,19 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
           <FormField label="Nombre del Producto" required error={errors.name}>
             <TouchInput
               value={form.name}
-              onChange={(e) => updateField('name', e.target.value)}
+              onChange={(e) => updateField("name", e.target.value)}
               placeholder="Ej: Azúcar estándar, Limón, Aceite de oliva"
               className="min-h-[44px]"
             />
           </FormField>
 
-          {/* SKU */}
-          <FormField label="SKU" required error={errors.sku}>
+          {/* SKU (auto-generado) */}
+          <FormField label="SKU (auto-generado)" required error={errors.sku}>
             <TouchInput
               value={form.sku}
-              onChange={(e) => updateField('sku', e.target.value)}
-              placeholder="Ej: AG-AZU-001, FV-LIM-001"
-              className="min-h-[44px]"
+              readOnly
+              placeholder="Se genera al completar nombre y categoría"
+              className="min-h-[44px] bg-gray-100 text-gray-600 font-mono cursor-not-allowed"
             />
           </FormField>
 
@@ -210,15 +255,15 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
             value={form.category}
             onChange={(v) => {
               if (!categories.includes(v)) {
-                setAddedCategories(prev => [...prev, v]);
+                setAddedCategories((prev) => [...prev, v]);
               }
-              updateField('category', v);
+              updateField("category", v);
               const allSubs = [
                 ...(BULK_SUBCATEGORIES[v] || []),
                 ...(addedSubcategories[v] || []),
               ];
               if (form.subcategory && !allSubs.includes(form.subcategory)) {
-                updateField('subcategory', '');
+                updateField("subcategory", "");
               }
             }}
             options={categories}
@@ -233,15 +278,19 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
             value={form.subcategory}
             onChange={(v) => {
               if (!subcategoryOptions.includes(v)) {
-                setAddedSubcategories(prev => ({
+                setAddedSubcategories((prev) => ({
                   ...prev,
                   [form.category]: [...(prev[form.category] || []), v],
                 }));
               }
-              updateField('subcategory', v);
+              updateField("subcategory", v);
             }}
             options={subcategoryOptions}
-            placeholder={form.category ? 'Buscar o agregar subcategoría...' : 'Selecciona una categoría primero'}
+            placeholder={
+              form.category
+                ? "Buscar o agregar subcategoría..."
+                : "Selecciona una categoría primero"
+            }
             required
             error={errors.subcategory}
             disabled={!form.category}
@@ -253,9 +302,9 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
             value={form.supplier}
             onChange={(v) => {
               if (!suppliers.includes(v)) {
-                setAddedSuppliers(prev => [...prev, v]);
+                setAddedSuppliers((prev) => [...prev, v]);
               }
-              updateField('supplier', v);
+              updateField("supplier", v);
             }}
             options={suppliers}
             placeholder="Buscar proveedor..."
@@ -268,8 +317,8 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
             <FormField label="Precio ($)" required error={errors.price}>
               <TouchInput
                 type="number"
-                value={form.price || ''}
-                onChange={(e) => updateField('price', Number(e.target.value))}
+                value={form.price || ""}
+                onChange={(e) => updateField("price", Number(e.target.value))}
                 placeholder="0.00"
                 className="min-h-[44px]"
               />
@@ -277,48 +326,67 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
             <FormField label="Unidad de Peso / Volumen" required>
               <Select
                 value={form.weightUnit}
-                onValueChange={(v) => updateField('weightUnit', v as CreateBulkProductData['weightUnit'])}
+                onValueChange={(v) =>
+                  updateField(
+                    "weightUnit",
+                    v as CreateBulkProductData["weightUnit"],
+                  )
+                }
               >
                 <SelectTrigger className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {WEIGHT_UNITS.map(({ value, label }) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormField>
           </div>
 
-          {/* Stock Inicial + Stock Mínimo + Stock Máximo */}
+          {/* Cantidad a Ingresar + Stock Mínimo + Stock Máximo */}
           <div className="grid grid-cols-3 gap-3">
-            <FormField label={`Stock Inicial (${form.weightUnit})`}>
+            <FormField label={`Cantidad a Ingresar (${form.weightUnit})`}>
               <TouchInput
                 type="number"
                 step="0.1"
-                value={form.stock || ''}
-                onChange={(e) => updateField('stock', Number(e.target.value))}
+                value={form.stock || ""}
+                onChange={(e) => updateField("stock", Number(e.target.value))}
                 placeholder="0"
                 className="min-h-[44px]"
               />
             </FormField>
-            <FormField label={`Stock Mínimo (${form.weightUnit})`} required error={errors.minStock}>
+            <FormField
+              label={`Stock Mínimo (${form.weightUnit})`}
+              required
+              error={errors.minStock}
+            >
               <TouchInput
                 type="number"
                 step="0.1"
-                value={form.minStock || ''}
-                onChange={(e) => updateField('minStock', Number(e.target.value))}
+                value={form.minStock || ""}
+                onChange={(e) =>
+                  updateField("minStock", Number(e.target.value))
+                }
                 placeholder="1"
                 className="min-h-[44px]"
               />
             </FormField>
-            <FormField label={`Stock Máximo (${form.weightUnit})`} required error={errors.maxStock}>
+            <FormField
+              label={`Stock Máximo (${form.weightUnit})`}
+              required
+              error={errors.maxStock}
+            >
               <TouchInput
                 type="number"
                 step="0.1"
-                value={form.maxStock || ''}
-                onChange={(e) => updateField('maxStock', Number(e.target.value))}
+                value={form.maxStock || ""}
+                onChange={(e) =>
+                  updateField("maxStock", Number(e.target.value))
+                }
                 placeholder="10"
                 className="min-h-[44px]"
               />
@@ -327,23 +395,33 @@ export function AddBulkProductModal({ open, onClose, onSave, barId, barName }: A
 
           {/* Hint sobre unidades */}
           <p className="text-xs text-gray-500 -mt-2">
-            Los valores de stock están en la unidad seleccionada ({form.weightUnit}).
-            El stock mínimo define el umbral para alertas de "stock bajo".
+            Los valores de stock están en la unidad seleccionada (
+            {form.weightUnit}). El stock mínimo define el umbral para alertas de
+            "stock bajo".
           </p>
 
           {/* Imagen del producto */}
           <ImageUrlField
-            value={form.image || ''}
-            onChange={(v) => updateField('image', v)}
+            value={form.image || ""}
+            onChange={(v) => updateField("image", v)}
           />
 
           {/* Botones */}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1 min-h-[44px]" disabled={isSaving}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 min-h-[44px]"
+              disabled={isSaving}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={isSaving} className="flex-1 min-h-[44px] bg-purple-500 hover:bg-purple-600">
-              {isSaving ? 'Guardando...' : 'Agregar Producto a Granel'}
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="flex-1 min-h-[44px] bg-purple-500 hover:bg-purple-600"
+            >
+              {isSaving ? "Guardando..." : "Agregar Producto a Granel"}
             </Button>
           </div>
         </div>

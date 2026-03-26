@@ -45,12 +45,15 @@ interface TouchInputProps extends ComponentProps<typeof Input> {
    *   - cualquier otro → `'alpha'`
    */
   keyboardMode?: KeyboardMode;
+  /** Evita abrir el teclado virtual al enfocar el input. Solo se abre al hacer click. */
+  preventKeyboardOnFocus?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TouchInput({
   keyboardMode,
+  preventKeyboardOnFocus,
   type,
   onFocus,
   onBlur,
@@ -80,10 +83,12 @@ export function TouchInput({
 
   const handleFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
-      openKeyboard(inputRef, resolvedMode);
+      if (!preventKeyboardOnFocus) {
+        openKeyboard(inputRef, resolvedMode);
+      }
       onFocus?.(e);
     },
-    [openKeyboard, resolvedMode, onFocus],
+    [openKeyboard, resolvedMode, onFocus, preventKeyboardOnFocus],
   );
 
   /** Re-abrir teclado al tocar el input incluso si ya tenía foco */

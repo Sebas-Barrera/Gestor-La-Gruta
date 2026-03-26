@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { AdminAccount } from '@/types';
 import { adminAccounts as mockAdmins } from '@/data/mockData';
+import { getLocalIsoDateString } from '@/lib/dates';
 
 export function useAdminManagement() {
   const [admins, setAdmins] = useState<AdminAccount[]>(mockAdmins);
@@ -9,7 +10,7 @@ export function useAdminManagement() {
     const newAdmin: AdminAccount = {
       ...data,
       id: `admin-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: getLocalIsoDateString(),
     };
     setAdmins(prev => [...prev, newAdmin]);
     return newAdmin;

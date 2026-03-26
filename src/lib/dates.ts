@@ -15,8 +15,18 @@
  */
 
 // ---------------------------------------------------------------------------
-// Parsing
+// Parsing & Generation
 // ---------------------------------------------------------------------------
+
+/**
+ * Retorna el string "YYYY-MM-DD" que corresponde exactamente al día actual 
+ * de la zona horaria local del navegador (ej: México).
+ */
+export function getLocalIsoDateString(): string {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().split('T')[0];
+}
 
 /**
  * Convierte un string ISO "YYYY-MM-DD" a un objeto Date en hora local.
@@ -57,7 +67,13 @@ export function formatISODate(date: Date | undefined): string {
  * @example formatDisplayDate("2026-03-04T18:00:00") // → "04 mar 2026"
  */
 export function formatDisplayDate(timestamp: string): string {
-  const date = new Date(timestamp);
+  if (!timestamp) return '';
+  // Si es solo fecha (ej "2026-03-04"), forzamos hora local para evitar el salto a UTC-1 día.
+  const isDateOnly = timestamp.length === 10;
+  const date = isDateOnly ? new Date(timestamp + 'T00:00:00') : new Date(timestamp);
+  
+  if (isNaN(date.getTime())) return '';
+  
   return date.toLocaleDateString('es-MX', {
     day: '2-digit',
     month: 'short',

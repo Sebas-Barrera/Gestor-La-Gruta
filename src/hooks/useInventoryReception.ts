@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { lookupBarcode } from '@/lib/barcodeLookup';
 import type { Product, ProductBarcode, ReceptionSession, ReceptionItem } from '@/types';
+import type { CreateProductData } from '@/components/admin/AddProductModal';
 
 /**
  * Resultado de procesar un escaneo de barcode dentro de una sesión de recepción.
@@ -57,6 +58,11 @@ export interface UseInventoryReceptionReturn {
    * Si el producto ya tiene un item de báscula, suma el peso.
    */
   addWeighedItem: (product: Product, weight: number) => void;
+  /**
+   * Agrega un item directamente (sin lookup).
+   * Útil para agregar un producto recién registrado a la sesión de recepción.
+   */
+  addScannedItem: (product: Product, productBarcode: ProductBarcode) => void;
   /** Actualiza la cantidad de escaneos de un item (mínimo 1) */
   updateItemScanCount: (itemId: string, newCount: number) => void;
   /** Elimina un item de la sesión */
@@ -66,11 +72,17 @@ export interface UseInventoryReceptionReturn {
    * haga POST al backend. Status → 'confirmed', confirmedAt → now.
    */
   confirmSession: (notes?: string) => ReceptionSession;
+  
+  /** Productos en borrador que se van a crear junto a la sesión */
+  draftProducts: CreateProductData[];
+  /** Agrega un producto en borrador a la sesión y lo suma a la lista visual */
+  addDraftProduct: (data: CreateProductData) => void;
 }
 
 export function useInventoryReception(): UseInventoryReceptionReturn {
   const [session, setSession] = useState<ReceptionSession | null>(null);
   const [items, setItems] = useState<ReceptionItem[]>([]);
+  const [draftProducts, setDraftProducts] = useState<CreateProductData[]>([]);
 
   const isSessionActive = session !== null && session.status === 'open';
 
@@ -97,11 +109,13 @@ export function useInventoryReception(): UseInventoryReceptionReturn {
     };
     setSession(newSession);
     setItems([]);
+    setDraftProducts([]);
   }, []);
 
   const cancelSession = useCallback(() => {
     setSession(prev => prev ? { ...prev, status: 'cancelled' } : null);
     setItems([]);
+    setDraftProducts([]);
     setSession(null);
   }, []);
 
@@ -115,6 +129,7 @@ export function useInventoryReception(): UseInventoryReceptionReturn {
     };
     setSession(null);
     setItems([]);
+    // Conservamos los draftProducts para que el parent los lea al confirmar
     return confirmedSession;
   }, [session, items]);
 
@@ -202,6 +217,40 @@ export function useInventoryReception(): UseInventoryReceptionReturn {
     });
   }, []);
 
+  const addScannedItem = useCallback((product: Product, productBarcode: ProductBarcode) => {
+    setItems(prev => {
+      const existingIndex = prev.findIndex(
+        item => item.productBarcodeId === productBarcode.id && !item.isWeightBased,
+      );
+
+      if (existingIndex >= 0) {
+        return prev.map((item, i) => {
+          if (i !== existingIndex) return item;
+          const newScanCount = item.scanCount + 1;
+          return {
+            ...item,
+            scanCount: newScanCount,
+            totalIndividualQty: newScanCount * item.quantityPerScan,
+          };
+        });
+      }
+
+      const newItem: ReceptionItem = {
+        id: `ri-${Date.now()}-${prev.length}`,
+        productId: product.id,
+        productName: product.name,
+        productBarcodeId: productBarcode.id,
+        barcodeLabel: productBarcode.label,
+        scanCount: 1,
+        quantityPerScan: productBarcode.quantityPerScan,
+        totalIndividualQty: productBarcode.quantityPerScan,
+        unit: product.isWeightBased ? (product.weightUnit || product.unit) : product.unit,
+        isWeightBased: false,
+      };
+      return [...prev, newItem];
+    });
+  }, []);
+
   const updateItemScanCount = useCallback((itemId: string, newCount: number) => {
     const safeCount = Math.max(1, newCount);
     setItems(prev =>
@@ -219,6 +268,30 @@ export function useInventoryReception(): UseInventoryReceptionReturn {
 
   const removeItem = useCallback((itemId: string) => {
     setItems(prev => prev.filter(item => item.id !== itemId));
+    // Opcionalmente: si el productBarcodeId coincide con el código de un draft, 
+    // podríamos quitarlo de draftProducts, pero se requiere lógica adicional.
+  }, []);
+
+  const addDraftProduct = useCallback((data: CreateProductData) => {
+    setDraftProducts(prev => [...prev, data]);
+    
+    // Crear un ReceptionItem temporal (fake ID y barcodeId)
+    setItems(prev => [
+      ...prev,
+      {
+        id: `ri-draft-${Date.now()}`,
+        productId: `draft-prod-${Date.now()}`,
+        productName: data.name,
+        productBarcodeId: `draft-barcode-${Date.now()}`,
+        barcodeLabel: data.isBoxBarcode ? `Caja de ${data.quantityPerBox}` : 'Individual',
+        scanCount: 1,
+        quantityPerScan: data.isBoxBarcode ? (data.quantityPerBox || 1) : 1,
+        totalIndividualQty: data.isBoxBarcode ? (data.quantityPerBox || 1) : Math.max(1, data.stock || 1),
+        unit: data.unit,
+        isWeightBased: data.isWeightBased,
+        weight: data.isWeightBased ? data.stock : undefined,
+      }
+    ]);
   }, []);
 
   return {
@@ -231,8 +304,11 @@ export function useInventoryReception(): UseInventoryReceptionReturn {
     cancelSession,
     processBarcodeScan,
     addWeighedItem,
+    addScannedItem,
     updateItemScanCount,
     removeItem,
     confirmSession,
+    draftProducts,
+    addDraftProduct,
   };
 }

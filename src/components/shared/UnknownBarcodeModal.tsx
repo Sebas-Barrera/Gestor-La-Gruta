@@ -28,14 +28,18 @@ interface UnknownBarcodeModalProps {
   /** El código de barras que no fue encontrado en el sistema */
   barcode: string;
   /**
-   * Opción 1: Registrar producto nuevo.
+   * Opción 1A: Registrar producto individual (1 pieza por escaneo).
    * El parent abre AddProductModal con barcode pre-llenado.
-   * Si `boxQuantity` > 1, el parent además crea un ProductBarcode al guardar.
-   *
-   * @param barcode      — código escaneado
-   * @param boxQuantity  — piezas por caja (undefined o 1 = individual)
    */
-  onRegisterNewProduct: (barcode: string, boxQuantity?: number) => void;
+  onRegisterIndividualProduct: (barcode: string) => void;
+  /**
+   * Opción 1B: Registrar producto empaquetado (múltiples piezas por escaneo).
+   * El parent abre AddPackagedProductModal con barcode de caja pre-llenado.
+   *
+   * @param boxBarcode   — código de la caja/paquete
+   * @param boxQuantity  — piezas por caja
+   */
+  onRegisterPackagedProduct: (boxBarcode: string, boxQuantity: number) => void;
   /**
    * Opción 2: Agregar barcode a producto existente.
    * El parent abre AddBarcodeToProductModal con este barcode.
@@ -47,18 +51,19 @@ export function UnknownBarcodeModal({
   open,
   onClose,
   barcode,
-  onRegisterNewProduct,
+  onRegisterIndividualProduct,
+  onRegisterPackagedProduct,
   onAddToExistingProduct,
 }: UnknownBarcodeModalProps) {
   const [selectedOption, setSelectedOption] = useState<'new' | 'existing' | null>(null);
   const [productType, setProductType] = useState<'individual' | 'box'>('individual');
-  const [boxQuantity, setBoxQuantity] = useState(24);
+  const [boxQuantity, setBoxQuantity] = useState('24');
   const [boxError, setBoxError] = useState('');
 
   const resetState = () => {
     setSelectedOption(null);
     setProductType('individual');
-    setBoxQuantity(24);
+    setBoxQuantity('24');
     setBoxError('');
   };
 
@@ -69,13 +74,14 @@ export function UnknownBarcodeModal({
 
   const handleRegisterNew = () => {
     if (productType === 'box') {
-      if (boxQuantity < 2) {
+      const qty = Number(boxQuantity) || 0;
+      if (qty < 2) {
         setBoxError('La cantidad por caja debe ser al menos 2');
         return;
       }
-      onRegisterNewProduct(barcode, boxQuantity);
+      onRegisterPackagedProduct(barcode, qty);
     } else {
-      onRegisterNewProduct(barcode);
+      onRegisterIndividualProduct(barcode);
     }
     resetState();
   };
@@ -185,9 +191,8 @@ export function UnknownBarcodeModal({
                 <FormField label="Piezas por caja" required error={boxError}>
                   <TouchInput
                     type="number"
-                    min={2}
                     value={boxQuantity}
-                    onChange={(e) => { setBoxQuantity(Number(e.target.value)); setBoxError(''); }}
+                    onChange={(e) => { setBoxQuantity(e.target.value); setBoxError(''); }}
                     placeholder="Ej: 24"
                     className="min-h-[44px]"
                   />

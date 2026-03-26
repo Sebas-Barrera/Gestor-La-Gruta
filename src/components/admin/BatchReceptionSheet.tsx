@@ -11,6 +11,9 @@ import { TouchInput } from '@/components/shared/TouchInput';
 import { TouchTextarea } from '@/components/shared/TouchTextarea';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { ScaleOverlay } from '@/components/worker/ScaleOverlay';
+import { UnknownBarcodeModal } from '@/components/shared/UnknownBarcodeModal';
+import { AddProductModal, type CreateProductData } from '@/components/admin/AddProductModal';
+import { AddPackagedProductModal } from '@/components/admin/AddPackagedProductModal';
 import {
   ScanLine,
   Scale,
@@ -21,8 +24,11 @@ import {
   Trash2,
   ClipboardCheck,
   MapPin,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { cleanBarcode } from '@/lib/barcodeUtils';
+import { useKeyboard } from '@/hooks/useKeyboard';
 import { useInventoryReception } from '@/hooks/useInventoryReception';
 import type { Product, ProductBarcode, ReceptionSession, ReceptionItem } from '@/types';
 
@@ -59,14 +65,9 @@ interface BatchReceptionSheetProps {
   productBarcodes: ProductBarcode[];
   /**
    * Callback al confirmar la recepción.
-   * Recibe la sesión completa (status: 'confirmed', items con totales).
+   * Recibe la sesión completa (status: 'confirmed', items con totales) y los borradores creados.
    */
-  onSessionConfirmed: (session: ReceptionSession) => void;
-  /**
-   * Callback cuando un barcode no se encuentra en el catálogo.
-   * El parent abre UnknownBarcodeModal para decidir qué hacer.
-   */
-  onBarcodeNotFound: (barcode: string) => void;
+  onSessionConfirmed: (session: ReceptionSession, drafts: CreateProductData[]) => void;
 }
 
 export function BatchReceptionSheet({
@@ -78,13 +79,19 @@ export function BatchReceptionSheet({
   products,
   productBarcodes,
   onSessionConfirmed,
-  onBarcodeNotFound,
 }: BatchReceptionSheetProps) {
+  const { closeKeyboard } = useKeyboard();
   const reception = useInventoryReception();
   const [barcodeInput, setBarcodeInput] = useState('');
   const [notes, setNotes] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [scaleOpen, setScaleOpen] = useState(false);
+  const [showUnknownBarcode, setShowUnknownBarcode] = useState(false);
+  const [unknownBarcode, setUnknownBarcode] = useState('');
+  const [initialUnit, setInitialUnit] = useState<string | undefined>(undefined);
+  const [initialQuantityPerBox, setInitialQuantityPerBox] = useState<number | undefined>(undefined);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showAddPackagedProduct, setShowAddPackagedProduct] = useState(false);
 
   // Iniciar sesión al abrir si no está activa
   const ensureSession = () => {
@@ -101,17 +108,34 @@ export function BatchReceptionSheet({
   // --- Handlers ---
 
   const handleBarcodeScan = () => {
-    const code = barcodeInput.trim();
+    const code = cleanBarcode(barcodeInput);
     if (!code) return;
 
+    closeKeyboard();
     ensureSession();
     const result = reception.processBarcodeScan(code, products, productBarcodes);
 
     if (result === 'not_found') {
-      onBarcodeNotFound(code);
+      const draft = reception.draftProducts.find(p => p.barcode === code);
+      if (draft) {
+         const item = reception.items.find(i => i.productName === draft.name && i.unit === draft.unit);
+         if (item) {
+           reception.updateItemScanCount(item.id, item.scanCount + 1);
+         }
+         setBarcodeInput('');
+         // Re-enfocar inmediatamente después de procesar
+         setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 50);
+         return;
+      }
+      setUnknownBarcode(code);
+      setShowUnknownBarcode(true);
+      setBarcodeInput('');
+      return;
     }
 
     setBarcodeInput('');
+    // Re-enfocar inmediatamente después de escanear exitosamente
+    setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 50);
   };
 
   const handleBarcodeKeyDown = (e: React.KeyboardEvent) => {
@@ -126,7 +150,7 @@ export function BatchReceptionSheet({
 
   const handleConfirm = () => {
     const session = reception.confirmSession(notes.trim() || undefined);
-    onSessionConfirmed(session);
+    onSessionConfirmed(session, reception.draftProducts);
     setNotes('');
     setBarcodeInput('');
     onClose();
@@ -181,12 +205,22 @@ export function BatchReceptionSheet({
                 <div className="relative flex-1">
                   <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <TouchInput
+                    id="batch-barcode-input"
                     placeholder="Escanea o escribe el código..."
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
                     onKeyDown={handleBarcodeKeyDown}
                     className="pl-10 min-h-[44px] text-base font-mono"
                     keyboardMode="numeric"
+                    preventKeyboardOnFocus
+                    autoFocus
+                    onBlur={(e) => {
+                      if (open && !scaleOpen && !showCancelConfirm && !showUnknownBarcode && !showAddProduct) {
+                        if (e.relatedTarget?.tagName !== 'TEXTAREA') {
+                          setTimeout(() => { document.getElementById('batch-barcode-input')?.focus(); }, 50);
+                        }
+                      }
+                    }}
                   />
                 </div>
                 <Button
@@ -258,24 +292,25 @@ export function BatchReceptionSheet({
               )}
             </div>
 
-            {/* Notas */}
+            {/* Notas - Diseño Mejorado */}
             {reception.items.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Notas <span className="text-gray-400 font-normal">(opcional)</span>
-                </label>
+              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <MessageSquare className="w-5 h-5 text-gray-400" />
+                  <label className="text-sm font-semibold">Observaciones de Recepción</label>
+                  <span className="text-xs text-gray-400 font-normal ml-auto">(opcional)</span>
+                </div>
                 <TouchTextarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Observaciones sobre la recepción..."
-                  className="resize-none"
-                  rows={2}
+                  placeholder="Ej: Faltó una caja, llegaron productos maltratados..."
+                  className="w-full resize-none min-h-[80px] text-sm bg-white"
                 />
               </div>
             )}
 
             {/* Footer: acciones */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4 border-t mt-4">
               <Button
                 variant="outline"
                 onClick={handleCloseAttempt}
@@ -312,6 +347,81 @@ export function BatchReceptionSheet({
         onConfirm={handleCancel}
         title="¿Cancelar recepción?"
         description={`Se perderán ${reception.items.length} items registrados. Esta acción no se puede deshacer.`}
+      />
+
+      {/* Modales internos de creación para Batch Reception */}
+      <UnknownBarcodeModal
+        open={showUnknownBarcode}
+        onClose={() => {
+          setShowUnknownBarcode(false);
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
+        barcode={unknownBarcode}
+        onRegisterIndividualProduct={(_barcode) => {
+          setShowUnknownBarcode(false);
+          setInitialUnit(undefined);
+          setInitialQuantityPerBox(undefined);
+          setShowAddProduct(true);
+        }}
+        onRegisterPackagedProduct={(_barcode, _qty) => {
+          setShowUnknownBarcode(false);
+          setInitialQuantityPerBox(_qty);
+          setShowAddPackagedProduct(true);
+        }}
+        onAddToExistingProduct={() => {
+          // Funcionalidad simplificada: en recepción por lotes forzamos a crear producto nuevo temporalmente
+          // Si eligen agregar a existente, los regresamos indicando que no está implementado en este modo.
+          setShowUnknownBarcode(false);
+          setBarcodeInput('');
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
+      />
+
+      {/* AddProductModal (producto individual) - no impacta la BD hasta que se confirme la sesión */}
+      <AddProductModal
+        open={showAddProduct}
+        onClose={() => {
+          setShowAddProduct(false);
+          setInitialUnit(undefined);
+          setInitialQuantityPerBox(undefined);
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
+        barId={barId}
+        barName={barName}
+        initialBarcode={unknownBarcode}
+        initialUnit={initialUnit}
+        initialQuantityPerBox={initialQuantityPerBox}
+        onSave={(data) => {
+          reception.addDraftProduct(data);
+          setShowAddProduct(false);
+          setUnknownBarcode('');
+          setInitialUnit(undefined);
+          setInitialQuantityPerBox(undefined);
+          // Re-enfocar después de guardar el producto
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
+      />
+
+      {/* AddPackagedProductModal (producto en caja/paquete) - no impacta la BD hasta que se confirme la sesión */}
+      <AddPackagedProductModal
+        open={showAddPackagedProduct}
+        onClose={() => {
+          setShowAddPackagedProduct(false);
+          setInitialQuantityPerBox(undefined);
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
+        barId={barId}
+        barName={barName}
+        initialBoxBarcode={unknownBarcode}
+        initialQuantityPerBox={initialQuantityPerBox}
+        onSave={(data) => {
+          reception.addDraftProduct(data);
+          setShowAddPackagedProduct(false);
+          setUnknownBarcode('');
+          setInitialQuantityPerBox(undefined);
+          // Re-enfocar después de guardar el producto
+          setTimeout(() => document.getElementById('batch-barcode-input')?.focus(), 100);
+        }}
       />
     </>
   );

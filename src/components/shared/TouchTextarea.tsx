@@ -29,21 +29,28 @@ import type { ComponentProps } from 'react';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+interface TouchTextareaProps extends ComponentProps<'textarea'> {
+  preventKeyboardOnFocus?: boolean;
+}
+
 export function TouchTextarea({
+  preventKeyboardOnFocus,
   onFocus,
   onBlur,
   onClick,
   ...props
-}: ComponentProps<'textarea'>) {
+}: TouchTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { openKeyboard } = useKeyboard();
 
   const handleFocus = useCallback(
     (e: React.FocusEvent<HTMLTextAreaElement>) => {
-      openKeyboard(textareaRef, 'alpha');
+      if (!preventKeyboardOnFocus) {
+        openKeyboard(textareaRef, 'alpha');
+      }
       onFocus?.(e);
     },
-    [openKeyboard, onFocus],
+    [openKeyboard, onFocus, preventKeyboardOnFocus],
   );
 
   const handleClick = useCallback(

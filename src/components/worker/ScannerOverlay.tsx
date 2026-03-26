@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { TouchInput } from '@/components/shared/TouchInput';
-import { ScanLine, Search, ArrowDownCircle, ArrowUpCircle, AlertCircle, Plus } from 'lucide-react';
+import { ScanLine, Search, ArrowDownCircle, ArrowUpCircle, AlertCircle, Plus, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { cleanBarcode } from '@/lib/barcodeUtils';
+import { useKeyboard } from '@/hooks/useKeyboard';
 import { lookupBarcode } from '@/lib/barcodeLookup';
 import type { Product, ProductBarcode } from '@/types';
 
@@ -33,9 +35,15 @@ interface ScannerOverlayProps {
   /**
    * Callback para registrar un nuevo producto manualmente (sin escanear).
    * Solo visible en modo ENTRADA (isAddMode = true).
-   * Cierra el overlay y abre AddProductModal sin barcode pre-llenado.
+   * @param initialUnit unit sugerida inicial (ej: "caja")
    */
-  onAddNewProduct?: () => void;
+  onAddNewProduct?: (initialUnit?: string) => void;
+  /**
+   * Callback para registrar un nuevo producto empaquetado/caja.
+   * Solo visible en modo ENTRADA (isAddMode = true).
+   * Abre el modal especializado AddPackagedProductModal.
+   */
+  onAddPackagedProduct?: () => void;
   /**
    * Lista de barcodes del sistema. Si se proporciona, el escáner usa
    * `lookupBarcode()` para soportar múltiples códigos por producto.
@@ -53,8 +61,10 @@ export function ScannerOverlay({
   onProductScanned,
   onBarcodeNotFound,
   onAddNewProduct,
+  onAddPackagedProduct,
   productBarcodes,
 }: ScannerOverlayProps) {
+  const { closeKeyboard } = useKeyboard();
   const [barcodeInput, setBarcodeInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
@@ -73,8 +83,10 @@ export function ScannerOverlay({
   };
 
   const handleBarcodeScan = () => {
-    const code = barcodeInput.trim();
+    const code = cleanBarcode(barcodeInput);
     if (!code) return;
+
+    closeKeyboard();
 
     // Multi-barcode: usa lookupBarcode() si hay productBarcodes disponibles
     if (productBarcodes) {
@@ -120,14 +132,10 @@ export function ScannerOverlay({
     onClose();
   };
 
-  const handleAddNewProduct = () => {
-    handleClose();
-    onAddNewProduct?.();
-  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <div className={cn(
@@ -178,6 +186,7 @@ export function ScannerOverlay({
                   onKeyDown={handleBarcodeKeyDown}
                   className="pl-10 min-h-[44px] text-base font-mono"
                   autoFocus
+                  preventKeyboardOnFocus
                 />
               </div>
               <Button
@@ -247,15 +256,33 @@ export function ScannerOverlay({
           )}
 
           {/* Botón para registrar nuevo producto manualmente (solo en modo ENTRADA) */}
-          {isAddMode && onAddNewProduct && (
-            <Button
-              variant="outline"
-              onClick={handleAddNewProduct}
-              className="w-full gap-2 min-h-[44px] border-dashed border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400"
-            >
-              <Plus className="w-4 h-4" />
-              Registrar nuevo producto
-            </Button>
+          {isAddMode && (onAddNewProduct || onAddPackagedProduct) && (
+            <div className="grid grid-cols-2 gap-3">
+              {onAddNewProduct && (
+                <Button
+                  variant="outline"
+                  onClick={() => onAddNewProduct()}
+                  className="w-full gap-2 min-h-[44px] border-dashed border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400"
+                >
+                  <Plus className="w-4 h-4" />
+                  Registrar pieza
+                </Button>
+              )}
+              {onAddPackagedProduct && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetState();
+                    onClose();
+                    onAddPackagedProduct();
+                  }}
+                  className="w-full gap-2 min-h-[44px] border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400"
+                >
+                  <Boxes className="w-4 h-4" />
+                  Registrar caja
+                </Button>
+              )}
+            </div>
           )}
 
           <Button variant="outline" onClick={handleClose} className="w-full min-h-[44px]">

@@ -1,20 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Minus, Plus, ArrowUpCircle } from 'lucide-react';
+import { Minus, Plus, ArrowUpCircle, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TouchTextarea } from '@/components/shared/TouchTextarea';
 import { QuickAddButtons } from '@/components/shared/QuickAddButtons';
-import type { Product } from '@/types';
+import type { Product, ProductBarcode } from '@/types';
 
+/**
+ * Props del modal de confirmación de salida de inventario.
+ *
+ * Soporta dos modos:
+ *   1. **Individual** (sin `productBarcode` o quantityPerScan = 1):
+ *      Decrementos de 1 unidad. Muestra solo la cantidad directa.
+ *   2. **Caja** (con `productBarcode` y quantityPerScan > 1):
+ *      Decrementa en CAJAS. Muestra conversión: "2 cajas × 24 = 48 botellas".
+ *      `onConfirm` siempre pasa el total en unidades individuales.
+ */
 interface InventoryExitModalProps {
   open: boolean;
   onClose: () => void;
   product: Product | null;
   barName: string;
+  /** Siempre recibe total en unidades individuales */
   onConfirm: (quantity: number, notes?: string) => void;
   /** Nombre de quien autoriza el movimiento (e.g. "Admin Omar Prado" o "Juan Pérez") */
   authorizedBy?: string;
+  /**
+   * Info del barcode escaneado. Si quantityPerScan > 1, muestra UI de conversión
+   * (cajas → unidades individuales).
+   */
+  productBarcode?: ProductBarcode;
 }
 
 export function InventoryExitModal({
@@ -24,13 +40,18 @@ export function InventoryExitModal({
   barName,
   onConfirm,
   authorizedBy,
+  productBarcode,
 }: InventoryExitModalProps) {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
+  const isBox = productBarcode && productBarcode.quantityPerScan > 1;
   const increment = product?.isWeightBased ? 0.1 : 1;
   const displayUnit = product?.isWeightBased ? product.weightUnit || product.unit : product?.unit;
   const maxQuantity = product?.stock ?? 0;
+
+  // Total en unidades individuales (para cajas: quantity × quantityPerScan)
+  const totalIndividual = isBox ? quantity * productBarcode.quantityPerScan : quantity;
 
   useEffect(() => {
     if (open) {
@@ -48,7 +69,8 @@ export function InventoryExitModal({
   };
 
   const handleConfirm = () => {
-    onConfirm(Number(quantity.toFixed(2)), notes || undefined);
+    // Siempre enviar total en unidades individuales
+    onConfirm(Number(totalIndividual.toFixed(2)), notes || undefined);
     setQuantity(1);
     setNotes('');
   };
@@ -61,11 +83,14 @@ export function InventoryExitModal({
 
   if (!product) return null;
 
-  const exceedsStock = quantity > maxQuantity;
+  const exceedsStock = totalIndividual > maxQuantity;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -88,6 +113,21 @@ export function InventoryExitModal({
             <p className="text-xs text-amber-600 mt-1">Salida de: {barName}</p>
           </div>
 
+          {/* Box conversion info */}
+          {isBox && (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <Boxes className="w-5 h-5 text-blue-600 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  {productBarcode.label}
+                </p>
+                <p className="text-xs text-blue-700">
+                  Cada escaneo = {productBarcode.quantityPerScan} {displayUnit}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Quantity controls */}
           <div className="flex items-center justify-center gap-6">
             <button
@@ -105,7 +145,9 @@ export function InventoryExitModal({
               )}>
                 {product.isWeightBased ? quantity.toFixed(1) : quantity}
               </p>
-              <p className="text-sm text-gray-500">{displayUnit}</p>
+              <p className="text-sm text-gray-500">
+                {isBox ? (productBarcode.label?.toLowerCase() || 'cajas') : displayUnit}
+              </p>
             </div>
 
             <button
@@ -121,10 +163,27 @@ export function InventoryExitModal({
           <QuickAddButtons
             isWeightBased={!!product.isWeightBased}
             weightUnit={product.weightUnit}
-            onAdd={(amount) => setQuantity(prev => Math.min(Number((prev + amount).toFixed(2)), maxQuantity))}
-            maxAdd={Number((maxQuantity - quantity).toFixed(2))}
+            onAdd={(amount) => {
+              const maxBoxes = isBox ? Math.floor(maxQuantity / productBarcode.quantityPerScan) : maxQuantity;
+              setQuantity(prev => Math.min(Number((prev + amount).toFixed(2)), maxBoxes));
+            }}
+            maxAdd={isBox ? Number((Math.floor(maxQuantity / productBarcode.quantityPerScan) - quantity).toFixed(2)) : Number((maxQuantity - quantity).toFixed(2))}
             colorScheme="amber"
           />
+
+          {/* Box total conversion */}
+          {isBox && (
+            <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                <span className="font-semibold">{quantity}</span> {productBarcode.label?.toLowerCase() || 'cajas'}
+                {' × '}
+                <span className="font-semibold">{productBarcode.quantityPerScan}</span>
+                {' = '}
+                <span className="text-lg font-bold text-blue-700">{totalIndividual}</span>
+                {' '}{displayUnit}
+              </p>
+            </div>
+          )}
 
           {/* Stock warning */}
           {exceedsStock && (
@@ -138,9 +197,14 @@ export function InventoryExitModal({
             <label className="text-sm font-medium text-gray-700 mb-1.5 block">Notas (opcional)</label>
             <TouchTextarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                // Filtrar bytes residuales del escáner físico (\r\n → "0D0A")
+                const cleaned = e.target.value.replace(/0D0A/gi, '').replace(/[\r\n]/g, '');
+                setNotes(cleaned);
+              }}
               placeholder="Razón de la salida..."
               className="w-full min-h-[80px] p-3 rounded-lg border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              preventKeyboardOnFocus
             />
           </div>
 

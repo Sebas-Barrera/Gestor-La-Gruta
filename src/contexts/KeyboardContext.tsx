@@ -227,18 +227,9 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
      * de la propiedad `value`, bypaseando el descriptor de React.
      * Luego se dispara un evento 'input' para que React detecte el cambio.
      *
-     * Para inputs type="number": temporalmente cambiamos a type="text" porque
-     * el browser rechaza valores intermedios como "2." (los considera inválidos
-     * y borra el contenido). Al cambiar a text, el value setter acepta cualquier
-     * string. Después restauramos el type original.
+     * Nota: TouchInput ya convierte type="number" a type="text" en el DOM,
+     * por lo que no se necesita swap temporal de type aquí.
      */
-    const inputEl = el as HTMLInputElement;
-    const isNumberInput = el.tagName === 'INPUT' && inputEl.type === 'number';
-
-    if (isNumberInput) {
-      inputEl.type = 'text';
-    }
-
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       el.tagName === 'TEXTAREA'
         ? HTMLTextAreaElement.prototype
@@ -252,10 +243,6 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
 
     // Disparar evento nativo para que React reactive los handlers onChange
     el.dispatchEvent(new Event('input', { bubbles: true }));
-
-    if (isNumberInput) {
-      inputEl.type = 'number';
-    }
 
     // Notificar si el input quedó vacío (para auto-capitalize)
     setInputEmpty(nextValue === '');

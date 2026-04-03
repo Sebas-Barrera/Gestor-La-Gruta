@@ -342,7 +342,7 @@ export function AddPackagedProductModal({
           </div>
 
           {/* Preview del stock final */}
-          {form.stock > 0 && form.quantityPerBox > 1 && (
+          {form.stock > 0 && (form.quantityPerBox ?? 0) > 1 && (
             <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-300">
               <p className="text-xs text-green-700 font-medium text-center">
                 📊 Stock final a registrar:

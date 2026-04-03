@@ -32,25 +32,25 @@ export function SettingsSection() {
     });
   };
 
-  const handleAddAdmin = (data: Omit<AdminAccount, "id" | "createdAt">) => {
-    addAdmin(data);
+  const handleAddAdmin = async (data: Omit<AdminAccount, "id" | "createdAt">) => {
+    await addAdmin(data);
     toast.success("Administrador creado", {
       description: `La cuenta de "${data.name}" fue creada exitosamente.`,
     });
   };
 
-  const handleUpdateAdmin = (
+  const handleUpdateAdmin = async (
     id: string,
     data: Omit<AdminAccount, "id" | "createdAt">,
   ) => {
-    updateAdmin(id, data);
+    await updateAdmin(id, data);
     toast.success("Administrador actualizado", {
       description: "Los cambios se guardaron correctamente.",
     });
   };
 
-  const handleDeleteAdmin = (id: string) => {
-    deleteAdmin(id);
+  const handleDeleteAdmin = async (id: string) => {
+    await deleteAdmin(id);
     toast.success("Administrador eliminado", {
       description: "La cuenta fue eliminada.",
     });

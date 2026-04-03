@@ -38,7 +38,7 @@ export function useGlobalBarcodeScanner({
 }: UseGlobalBarcodeScannerOptions) {
   const bufferRef = useRef('');
   const lastKeyTimeRef = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Refs estables para los callbacks (evitar re-suscripciones)
   const productsRef = useRef(products);

@@ -298,7 +298,7 @@ export function WorkerInventorySection() {
   };
 
   /** Recepción por lotes confirmada */
-  const handleBatchSessionConfirmed = (
+  const handleBatchSessionConfirmed = async (
     session: ReceptionSession,
     drafts: CreateProductData[],
   ) => {
@@ -306,11 +306,11 @@ export function WorkerInventorySection() {
 
     // 1. Convertir borradores en productos reales
     const draftIdMap = new Map<string, string>();
-    drafts.forEach((draft) => {
+    for (const draft of drafts) {
       // FIX BUG: `addProduct()` normalmente inyecta el `draft.stock` como inventario inicial.
       // Sin embargo, `confirmBatchReception` abajo VOLVERÁ a inyectar esa cantidad sumando
       // el `totalIndividualQty`. Por tanto, asignamos temporalmente stock: 0 al crear el producto.
-      const newProduct = addProduct({
+      const newProduct = await addProduct({
         ...draft,
         barId: currentBar?.id || draft.barId,
         stock: 0,
@@ -318,14 +318,14 @@ export function WorkerInventorySection() {
       draftIdMap.set(draft.name, newProduct.id);
 
       if (draft.barcode) {
-        addProductBarcode({
+        await addProductBarcode({
           productId: newProduct.id,
           barcode: draft.barcode,
           quantityPerScan: 1,
           label: "Individual",
         });
       }
-    });
+    }
 
     // 2. Actualizar los IDs ficticios en los items de la sesión
     const finalSession = {
@@ -341,7 +341,7 @@ export function WorkerInventorySection() {
       }),
     };
 
-    confirmBatchReception(finalSession, workerName);
+    await confirmBatchReception(finalSession, workerName);
     const totalUnits = finalSession.items.reduce(
       (sum, i) => sum + i.totalIndividualQty,
       0,

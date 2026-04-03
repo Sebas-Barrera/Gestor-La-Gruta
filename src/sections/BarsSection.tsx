@@ -3,11 +3,11 @@ import { Store, Plus, MapPin, Users, Package, TrendingUp, Edit2, Trash2, Info } 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useBarManagement } from '@/hooks/useBarManagement';
+import { useInventory } from '@/contexts/InventoryContext';
 import { BarFormModal } from '@/components/bars/BarFormModal';
 import { BarInfoTab } from '@/components/bars/BarInfoTab';
 import { BarPersonalTab } from '@/components/bars/BarPersonalTab';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
-import { products } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Bar, Worker } from '@/types';
@@ -23,6 +23,7 @@ export function BarsSection() {
     updateWorker,
     deleteWorker,
   } = useBarManagement();
+  const { products } = useInventory();
 
   const [selectedBarId, setSelectedBarId] = useState(bars[0]?.id ?? '');
   const [barFormOpen, setBarFormOpen] = useState(false);
@@ -48,26 +49,15 @@ export function BarsSection() {
    *   Crear → POST /api/bars         Body: Omit<Bar, 'id'>   Response: Bar
    *   Editar → PUT /api/bars/:barId   Body: Omit<Bar, 'id'>   Response: Bar
    */
-  const handleSaveBar = (data: Omit<Bar, 'id'>) => {
+  const handleSaveBar = async (data: Omit<Bar, 'id'>) => {
     if (editingBar) {
-      updateBar(editingBar.id, data);
-
-      console.log('[Bars:Update] Datos para backend:', {
-        barId: editingBar.id,
-        updates: data,
-      });
-
+      await updateBar(editingBar.id, data);
       toast.success(`Bar "${data.name}" actualizado`, {
         description: 'Los cambios han sido guardados',
       });
     } else {
-      const newBar = addBar(data);
+      const newBar = await addBar(data);
       setSelectedBarId(newBar.id);
-
-      console.log('[Bars:Create] Datos para backend:', {
-        bar: data,
-      });
-
       toast.success(`Bar "${data.name}" creado`, {
         description: `Ubicación: ${data.location}`,
       });
@@ -82,21 +72,14 @@ export function BarsSection() {
    *   DELETE /api/bars/:barId
    *   Response: { success: boolean }
    */
-  const handleDeleteBar = () => {
+  const handleDeleteBar = async () => {
     if (!deleteTarget) return;
     const deletedName = deleteTarget.name;
-
-    console.log('[Bars:Delete] Datos para backend:', {
-      barId: deleteTarget.id,
-      barName: deletedName,
-    });
-
-    deleteBar(deleteTarget.id);
+    await deleteBar(deleteTarget.id);
     setDeleteTarget(null);
     if (selectedBarId === deleteTarget.id) {
       setSelectedBarId(bars.find(b => b.id !== deleteTarget.id)?.id ?? '');
     }
-
     toast.success(`Bar "${deletedName}" eliminado`, {
       description: 'El bar fue eliminado correctamente',
     });
@@ -104,59 +87,23 @@ export function BarsSection() {
 
   // ─── Wrappers de Worker con notificaciones ───
 
-  /**
-   * Agregar un trabajador a un bar.
-   *
-   * Backend:
-   *   POST /api/workers
-   *   Body: Omit<Worker, 'id' | 'createdAt'> (name, pin, barIds, phone, isActive, avatar?)
-   *   Response: Worker
-   */
-  const handleAddWorker = (data: Omit<Worker, 'id' | 'createdAt'>) => {
-    addWorker(data);
-
-    console.log('[Workers:Create] Datos para backend:', { worker: data });
-
+  const handleAddWorker = async (data: Omit<Worker, 'id' | 'createdAt'>) => {
+    await addWorker(data);
     toast.success(`Trabajador "${data.name}" agregado`, {
       description: `Asignado a ${data.barIds.length} bar(es)`,
     });
   };
 
-  /**
-   * Actualizar datos de un trabajador.
-   *
-   * Backend:
-   *   PATCH /api/workers/:workerId
-   *   Body: Partial<Worker>
-   *   Response: Worker (actualizado)
-   */
-  const handleUpdateWorker = (id: string, data: Partial<Worker>) => {
-    updateWorker(id, data);
-
-    console.log('[Workers:Update] Datos para backend:', { workerId: id, updates: data });
-
+  const handleUpdateWorker = async (id: string, data: Partial<Worker>) => {
+    await updateWorker(id, data);
     toast.success(`Trabajador "${data.name || 'seleccionado'}" actualizado`, {
       description: 'Los cambios han sido guardados',
     });
   };
 
-  /**
-   * Eliminar un trabajador.
-   *
-   * Backend:
-   *   DELETE /api/workers/:workerId
-   *   Response: { success: boolean }
-   */
-  const handleDeleteWorker = (id: string) => {
+  const handleDeleteWorker = async (id: string) => {
     const worker = workers.find(w => w.id === id);
-
-    console.log('[Workers:Delete] Datos para backend:', {
-      workerId: id,
-      workerName: worker?.name,
-    });
-
-    deleteWorker(id);
-
+    await deleteWorker(id);
     toast.success(`Trabajador "${worker?.name || ''}" eliminado`, {
       description: 'El trabajador fue removido del sistema',
     });

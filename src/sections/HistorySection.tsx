@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Store, FileDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,23 +8,13 @@ import { HistoryFilters, defaultHistoryFilters } from '@/components/history/Hist
 import { HistoryTable } from '@/components/history/HistoryTable';
 import { HistorySummaryCards } from '@/components/history/HistorySummaryCards';
 import { HistoryEntryDetailSheet } from '@/components/history/HistoryEntryDetailSheet';
-import { inventoryHistoryEntries } from '@/data/historyMockData';
-import { bars, adminAccounts, products } from '@/data/mockData';
+import { getInventoryHistory } from '@/lib/api/history';
+import { useInventory } from '@/contexts/InventoryContext';
+import { useBarManagement } from '@/hooks/useBarManagement';
+import { useAdminManagement } from '@/hooks/useAdminManagement';
 import type { HistoryFilterState } from '@/components/history/HistoryFilters';
 import type { InventoryHistoryEntry } from '@/types';
 
-/**
- * Sección principal de Historial de Inventario.
- * Muestra todas las entradas de mercancía al inventario de forma general o por bar.
- *
- * Soporta query param `?bar=<barId>` para pre-seleccionar un bar
- * al navegar desde otras secciones.
- *
- * Backend: Este componente consume los siguientes endpoints:
- *   - GET /api/inventory-history?barId=&adminId=&entryType=&category=&dateFrom=&dateTo=&search=&page=&pageSize=
- *   - GET /api/inventory-history/summary (mismos filtros, retorna conteos agregados)
- *   - GET /api/inventory-history/export (mismos filtros, retorna CSV/Excel)
- */
 export function HistorySection() {
   const [searchParams] = useSearchParams();
   const initialBarId = searchParams.get('bar') || 'all';
@@ -33,34 +23,33 @@ export function HistorySection() {
   const [filters, setFilters] = useState<HistoryFilterState>(defaultHistoryFilters);
   const [page, setPage] = useState(1);
   const [selectedEntry, setSelectedEntry] = useState<InventoryHistoryEntry | null>(null);
+  const [historyEntries, setHistoryEntries] = useState<InventoryHistoryEntry[]>([]);
 
-  // --- Datos disponibles según bar seleccionado ---
+  const { products } = useInventory();
+  const { bars } = useBarManagement();
+  const { admins } = useAdminManagement();
 
-  const activeAdmins = useMemo(() => {
-    return adminAccounts.filter(a => a.isActive);
-  }, []);
-
-  const availableCategories = useMemo(() => {
-    const entries = selectedBarId === 'all'
-      ? inventoryHistoryEntries
-      : inventoryHistoryEntries.filter(e => e.barId === selectedBarId);
-    return [...new Set(entries.map(e => e.productCategory))].sort();
+  useEffect(() => {
+    getInventoryHistory({
+      barId: selectedBarId === 'all' ? undefined : selectedBarId,
+      pageSize: 500,
+    })
+      .then(setHistoryEntries)
+      .catch(err => console.error('[HistorySection] Failed to load history:', err));
   }, [selectedBarId]);
 
-  // --- Filtrado de entradas ---
+  const activeAdmins = useMemo(() => admins.filter(a => a.isActive), [admins]);
+
+  const availableCategories = useMemo(() => {
+    return [...new Set(historyEntries.map(e => e.productCategory))].sort();
+  }, [historyEntries]);
 
   const filteredEntries = useMemo(() => {
-    return inventoryHistoryEntries
+    return historyEntries
       .filter((e: InventoryHistoryEntry) => {
-        // Filtro por bar
-        if (selectedBarId !== 'all' && e.barId !== selectedBarId) return false;
-        // Filtro por admin
         if (filters.adminId && e.adminId !== filters.adminId) return false;
-        // Filtro por tipo de entrada
         if (filters.entryType && e.entryType !== filters.entryType) return false;
-        // Filtro por categoría
         if (filters.category && e.productCategory !== filters.category) return false;
-        // Filtro por búsqueda de texto
         if (filters.search) {
           const searchLower = filters.search.toLowerCase();
           const matchesProduct = e.productName.toLowerCase().includes(searchLower);
@@ -71,16 +60,13 @@ export function HistorySection() {
           const matchesBarcode = e.barcodeScanned?.toLowerCase().includes(searchLower);
           if (!matchesProduct && !matchesAdmin && !matchesNotes && !matchesSessionNotes && !matchesBar && !matchesBarcode) return false;
         }
-        // Filtro por rango de fechas
         if (filters.dateFrom || filters.dateTo) {
           if (!isDateInRange(e.timestamp, filters.dateFrom, filters.dateTo)) return false;
         }
         return true;
       })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [selectedBarId, filters]);
-
-  // --- Estadísticas de resumen ---
+  }, [historyEntries, filters]);
 
   const summaryStats = useMemo(() => {
     const scanIndividual = filteredEntries.filter(e => e.entryType === 'scan_individual').length;
@@ -88,7 +74,6 @@ export function HistorySection() {
     const batchReception = filteredEntries.filter(e => e.entryType === 'batch_reception').length;
     const bulkWeight = filteredEntries.filter(e => e.entryType === 'bulk_weight').length;
     const manualAdj = filteredEntries.filter(e => e.entryType === 'manual_adjustment').length;
-
     return {
       totalEntries: filteredEntries.length,
       scanEntries: scanIndividual + scanBox,
@@ -97,15 +82,22 @@ export function HistorySection() {
     };
   }, [filteredEntries]);
 
-  // --- Paginación ---
-
   const pageSize = Number(filters.pageSize) || 15;
   const paginatedEntries = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredEntries.slice(start, start + pageSize);
   }, [filteredEntries, page, pageSize]);
 
-  // --- Handlers ---
+  const barAlertCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    bars.forEach(bar => {
+      const barProducts = products.filter(p => p.barId === bar.id);
+      counts[bar.id] = barProducts.filter(
+        p => p.status === 'low_stock' || p.status === 'out_of_stock',
+      ).length;
+    });
+    return counts;
+  }, [bars, products]);
 
   const handleBarChange = useCallback((barId: string | 'all') => {
     setSelectedBarId(barId);
@@ -127,21 +119,8 @@ export function HistorySection() {
     setSelectedEntry(entry);
   }, []);
 
-  // Contadores de alertas por bar (para indicador visual en el selector)
-  const barAlertCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    bars.forEach(bar => {
-      const barProducts = products.filter(p => p.barId === bar.id);
-      counts[bar.id] = barProducts.filter(
-        p => p.status === 'low_stock' || p.status === 'out_of_stock'
-      ).length;
-    });
-    return counts;
-  }, []);
-
   return (
     <div className="p-6 space-y-6">
-      {/* Título de sección + Botón de exportar */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Historial de Entradas al Inventario</h2>
@@ -149,27 +128,11 @@ export function HistorySection() {
             Registro completo de todos los ingresos de mercancía
           </p>
         </div>
-        {/* 
-          TODO Backend: EXPORTACIÓN DE HISTORIAL
-          Al construir el archivo Excel/CSV al presionar este botón, el documento DEBE de exportarse 
-          en base a ESPECÍFICAMENTE la configuración que se tiene en este componente en este momento.
-          Es decir, la consulta de exportación debe considerar:
-          1. El bar seleccionado actualmente (puede ser "all" o un ID específico).
-          2. Los filtros en memoria aplicados: Admin que hizo el movimiento, Categoría, Tipo de entrada.
-          3. Filtros por fechas personalizadas, y términos de búsqueda libre.
-
-          Por ejemplo, si el usuario seleccionó "Bar Central" y fecha "13/03 a 14/03", 
-          el Excel resultante DEBE devolver exactamente esos datos tal cual se estuvieran viendo en pantalla.
-        */}
         <Button
           variant="outline"
           className="gap-2 hover:border-blue-500 hover:text-blue-600"
           onClick={() => {
-            // endpoint export params -> { barId: selectedBarId, ...filters }
-            console.log('[HistoryExport] Datos para backend:', {
-              barId: selectedBarId,
-              ...filters,
-            });
+            console.log('[HistoryExport] Datos para backend:', { barId: selectedBarId, ...filters });
           }}
         >
           <FileDown className="w-4 h-4" />
@@ -191,7 +154,7 @@ export function HistorySection() {
               'transition-all duration-200',
               selectedBarId === 'all'
                 ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-blue-300'
+                : 'border-gray-200 hover:border-blue-300',
             )}
           >
             <Store className="w-4 h-4" />
@@ -207,12 +170,12 @@ export function HistorySection() {
                 'transition-all duration-200',
                 selectedBarId === bar.id
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-blue-300'
+                  : 'border-gray-200 hover:border-blue-300',
               )}
             >
               <div className={cn(
                 'w-2 h-2 rounded-full',
-                barAlertCounts[bar.id] > 0 ? 'bg-amber-500' : 'bg-blue-500'
+                barAlertCounts[bar.id] > 0 ? 'bg-amber-500' : 'bg-blue-500',
               )} />
               <span className="text-sm font-medium">{bar.name}</span>
               {barAlertCounts[bar.id] > 0 && (
@@ -225,7 +188,6 @@ export function HistorySection() {
         </div>
       </div>
 
-      {/* Tarjetas de resumen */}
       <HistorySummaryCards
         totalEntries={summaryStats.totalEntries}
         scanEntries={summaryStats.scanEntries}
@@ -233,7 +195,6 @@ export function HistorySection() {
         otherEntries={summaryStats.otherEntries}
       />
 
-      {/* Filtros */}
       <HistoryFilters
         filters={filters}
         onChange={handleFilterChange}
@@ -242,7 +203,6 @@ export function HistorySection() {
         availableCategories={availableCategories}
       />
 
-      {/* Tabla de historial */}
       <HistoryTable
         entries={paginatedEntries}
         page={page}
@@ -253,7 +213,6 @@ export function HistorySection() {
         onRowClick={handleRowClick}
       />
 
-      {/* Detail Sheet */}
       <HistoryEntryDetailSheet
         open={selectedEntry !== null}
         onClose={() => setSelectedEntry(null)}

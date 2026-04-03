@@ -511,10 +511,10 @@ export function AddProductModal({
                 </FormField>
               </div>
 
-              {form.stock > 0 && form.quantityPerBox > 1 && (
+              {form.stock > 0 && (form.quantityPerBox ?? 0) > 1 && (
                 <div className="mt-2 p-2 bg-white/60 rounded-lg border border-amber-300">
                   <p className="text-xs text-amber-800 font-medium text-center">
-                    📊 Stock final: {form.stock} paquete(s) × {form.quantityPerBox} {form.unit || "piezas"} = <span className="font-bold text-amber-900">{form.stock * form.quantityPerBox} {form.unit || "unidades"}</span>
+                    📊 Stock final: {form.stock} paquete(s) × {form.quantityPerBox} {form.unit || "piezas"} = <span className="font-bold text-amber-900">{form.stock * (form.quantityPerBox ?? 1)} {form.unit || "unidades"}</span>
                   </p>
                 </div>
               )}

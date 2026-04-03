@@ -513,7 +513,7 @@ export function InventorySection() {
   };
 
   /** Recepción por lotes confirmada */
-  const handleSessionConfirmed = (
+  const handleSessionConfirmed = async (
     session: ReceptionSession,
     drafts: CreateProductData[],
   ) => {
@@ -521,22 +521,22 @@ export function InventorySection() {
 
     // 1. Convertir borradores en productos reales
     const draftIdMap = new Map<string, string>();
-    drafts.forEach((draft) => {
+    for (const draft of drafts) {
       // FIX BUG: Evitamos doble inyección de stock forzando inicialización en 0,
       // dejando que confirmBatchReception realice el ingreso real.
-      const newProduct = addProduct({ ...draft, stock: 0 });
+      const newProduct = await addProduct({ ...draft, stock: 0 });
       draftIdMap.set(draft.name, newProduct.id);
 
       // Si el usuario intentó registrar un código de barras en el draft, lo registramos individualmente por compatibilidad
       if (draft.barcode) {
-        addProductBarcode({
+        await addProductBarcode({
           productId: newProduct.id,
           barcode: draft.barcode,
           quantityPerScan: 1,
           label: "Individual",
         });
       }
-    });
+    }
 
     // 2. Actualizar los IDs ficticios en los items de la sesión
     const finalSession = {
@@ -552,7 +552,7 @@ export function InventorySection() {
       }),
     };
 
-    confirmBatchReception(finalSession, authorizedBy);
+    await confirmBatchReception(finalSession, authorizedBy);
     const totalUnits = finalSession.items.reduce(
       (sum, i) => sum + i.totalIndividualQty,
       0,

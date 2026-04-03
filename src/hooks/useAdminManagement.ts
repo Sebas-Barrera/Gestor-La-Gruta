@@ -1,31 +1,49 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { AdminAccount } from '@/types';
-import { adminAccounts as mockAdmins } from '@/data/mockData';
-import { getLocalIsoDateString } from '@/lib/dates';
+import {
+  loadAdminAccounts,
+  createAdmin,
+  updateAdmin as updateAdminApi,
+  deleteAdmin as deleteAdminApi,
+} from '@/lib/api/auth';
 
 export function useAdminManagement() {
-  const [admins, setAdmins] = useState<AdminAccount[]>(mockAdmins);
+  const [admins, setAdmins] = useState<AdminAccount[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addAdmin = useCallback((data: Omit<AdminAccount, 'id' | 'createdAt'>) => {
-    const newAdmin: AdminAccount = {
-      ...data,
-      id: `admin-${Date.now()}`,
-      createdAt: getLocalIsoDateString(),
-    };
-    setAdmins(prev => [...prev, newAdmin]);
-    return newAdmin;
+  useEffect(() => {
+    loadAdminAccounts()
+      .then(setAdmins)
+      .catch(err => console.error('[useAdminManagement] Failed to load:', err))
+      .finally(() => setLoading(false));
   }, []);
 
-  const updateAdmin = useCallback((id: string, data: Partial<AdminAccount>) => {
-    setAdmins(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
-  }, []);
+  const addAdmin = useCallback(
+    async (data: Omit<AdminAccount, 'id' | 'createdAt'>): Promise<AdminAccount> => {
+      const newAdmin = await createAdmin(data);
+      setAdmins(prev => [...prev, newAdmin]);
+      return newAdmin;
+    },
+    [],
+  );
 
-  const deleteAdmin = useCallback((id: string) => {
+  const updateAdmin = useCallback(
+    async (id: string, data: Partial<Omit<AdminAccount, 'id' | 'createdAt'>>): Promise<void> => {
+      await updateAdminApi(id, data);
+      setAdmins(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
+    },
+    [],
+  );
+
+  /** Soft delete — sets is_active = false. */
+  const deleteAdmin = useCallback(async (id: string): Promise<void> => {
+    await deleteAdminApi(id);
     setAdmins(prev => prev.filter(a => a.id !== id));
   }, []);
 
   return {
     admins,
+    loading,
     addAdmin,
     updateAdmin,
     deleteAdmin,

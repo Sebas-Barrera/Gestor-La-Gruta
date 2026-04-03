@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package,
@@ -8,61 +8,103 @@ import {
   Store,
 } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
-// import { CapacityChart } from '@/components/CapacityChart';
 import { ActivityLog } from '@/components/ActivityLog';
 import { InventoryAlerts } from '@/components/InventoryAlerts';
 import { BarPerformanceChart } from '@/components/BarPerformanceChart';
 import { RecentSalesByBar } from '@/components/RecentSalesByBar';
 import { cn } from '@/lib/utils';
-import { dashboardStats, recentActivities, inventoryAlerts, bars, products, recentSales } from '@/data/mockData';
+import { useInventory } from '@/contexts/InventoryContext';
+import { useBarManagement } from '@/hooks/useBarManagement';
+import type { InventoryAlert, Activity } from '@/types';
 
 export function DashboardSection() {
   const nav = useNavigate();
   const onNavigate = (section: string, params?: string) => nav(`/admin/${section}${params || ''}`);
   const [selectedBarId, setSelectedBarId] = useState<string | 'all'>('all');
 
-  // Calcular estadísticas por bar
-  const barStats = bars.map(bar => {
-    const barProducts = products.filter(p => p.barId === bar.id || bar.id === '1');
-    const barSales = recentSales.filter(s => s.barId === bar.id);
-    const totalValue = barProducts.reduce((acc, p) => acc + (p.stock * p.price), 0);
-    const lowStock = barProducts.filter(p => p.status === 'low_stock').length;
-    const outOfStock = barProducts.filter(p => p.status === 'out_of_stock').length;
-    const totalSales = barSales.reduce((acc, s) => acc + s.total, 0);
-    
+  const { products, inventoryMovements } = useInventory();
+  const { bars } = useBarManagement();
+
+  // ── Alertas calculadas en tiempo real desde el stock actual ──────────
+  const allAlerts = useMemo((): InventoryAlert[] => {
+    return products
+      .filter(p => p.stock <= p.minStock || p.stock <= 0)
+      .map(p => ({
+        id: p.id,
+        productId: p.id,
+        productName: p.name,
+        type: p.stock <= 0 ? 'out_of_stock' as const : 'low_stock' as const,
+        currentStock: p.stock,
+        threshold: p.minStock,
+        timestamp: new Date().toISOString(),
+        barId: p.barId ?? '',
+        barName: bars.find(b => b.id === p.barId)?.name,
+      }));
+  }, [products, bars]);
+
+  const filteredAlerts = useMemo(() => {
+    if (selectedBarId === 'all') return allAlerts;
+    return allAlerts.filter(a => a.barId === selectedBarId);
+  }, [allAlerts, selectedBarId]);
+
+  // ── Actividades derivadas de movimientos de inventario ───────────────
+  const filteredActivities = useMemo((): Activity[] => {
+    const source = selectedBarId === 'all'
+      ? inventoryMovements
+      : inventoryMovements.filter(m => m.barId === selectedBarId);
+
+    return source.slice(0, 30).map(m => ({
+      id: m.id,
+      type: m.type === 'in' ? 'stock_in' as const : 'stock_out' as const,
+      message: `${m.type === 'in' ? '+' : '-'}${m.quantity} ${m.unit} de "${m.productName}"`,
+      timestamp: m.timestamp,
+      user: m.workerName,
+      barId: m.barId,
+      barName: bars.find(b => b.id === m.barId)?.name,
+      productId: m.productId,
+      productName: m.productName,
+    }));
+  }, [inventoryMovements, selectedBarId, bars]);
+
+  // ── Stats globales calculadas ────────────────────────────────────────
+  const dashboardStats = useMemo(() => {
+    const filtered = selectedBarId === 'all' ? products : products.filter(p => p.barId === selectedBarId);
     return {
-      ...bar,
-      productCount: barProducts.length,
-      inventoryValue: totalValue,
-      lowStockCount: lowStock,
-      outOfStockCount: outOfStock,
-      todaySales: totalSales,
-      salesTrend: Math.floor(Math.random() * 20) - 5, // Simulado
+      totalProducts: filtered.length,
+      inventoryValue: filtered.reduce((sum, p) => sum + p.stock * p.price, 0),
+      lowStockCount: filtered.filter(p => p.status === 'low_stock' || p.status === 'out_of_stock').length,
+      todaySales: 0,
+      totalProductsChange: 0,
+      inventoryValueChange: 0,
+      todaySalesChange: 0,
     };
-  });
+  }, [products, selectedBarId]);
 
-  // Filtrar alertas por bar seleccionado
-  const filteredAlerts = selectedBarId === 'all' 
-    ? inventoryAlerts 
-    : inventoryAlerts.filter(a => {
-        const product = products.find(p => p.id === a.productId);
-        return product?.barId === selectedBarId;
-      });
-
-  // Filtrar actividades por bar
-  const filteredActivities = selectedBarId === 'all'
-    ? recentActivities
-    : recentActivities.filter(a => a.barId === selectedBarId);
+  // ── Stats por bar (para BarPerformanceChart y el selector) ───────────
+  const barStats = useMemo(() => {
+    return bars.map(bar => {
+      const barProducts = products.filter(p => p.barId === bar.id);
+      return {
+        ...bar,
+        productCount: barProducts.length,
+        inventoryValue: barProducts.reduce((acc, p) => acc + p.stock * p.price, 0),
+        lowStockCount: barProducts.filter(p => p.status === 'low_stock').length,
+        outOfStockCount: barProducts.filter(p => p.status === 'out_of_stock').length,
+        todaySales: 0,
+        salesTrend: 0,
+      };
+    });
+  }, [bars, products]);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Bar Selector - Filtro Principal */}
+      {/* Bar Selector */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
         <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
           <span className="text-sm font-medium text-gray-500 whitespace-nowrap flex-shrink-0">
             Ver datos de:
           </span>
-          
+
           <button
             onClick={() => setSelectedBarId('all')}
             className={cn(
@@ -70,7 +112,7 @@ export function DashboardSection() {
               'transition-all duration-200',
               selectedBarId === 'all'
                 ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 hover:border-blue-300'
+                : 'border-gray-200 hover:border-blue-300',
             )}
           >
             <Store className="w-4 h-4" />
@@ -86,13 +128,13 @@ export function DashboardSection() {
                 'transition-all duration-200',
                 selectedBarId === bar.id
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-blue-300'
+                  : 'border-gray-200 hover:border-blue-300',
               )}
             >
               <div className={cn(
                 'w-2 h-2 rounded-full',
                 bar.outOfStockCount > 0 ? 'bg-red-500' :
-                bar.lowStockCount > 0 ? 'bg-amber-500' : 'bg-blue-500'
+                bar.lowStockCount > 0 ? 'bg-amber-500' : 'bg-blue-500',
               )} />
               <span className="text-sm font-medium">{bar.name}</span>
               {(bar.lowStockCount > 0 || bar.outOfStockCount > 0) && (
@@ -105,14 +147,14 @@ export function DashboardSection() {
         </div>
       </div>
 
-      {/* Stats Grid - Globales o por Bar */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={Package}
           iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          value={selectedBarId === 'all' ? dashboardStats.totalProducts : barStats.find(b => b.id === selectedBarId)?.productCount || 0}
-          label={selectedBarId === 'all' ? "Total Productos" : "Productos en Bar"}
+          value={dashboardStats.totalProducts}
+          label={selectedBarId === 'all' ? 'Total Productos' : 'Productos en Bar'}
           change={dashboardStats.totalProductsChange}
           changeLabel="vs mes pasado"
           delay={0}
@@ -121,7 +163,7 @@ export function DashboardSection() {
           icon={DollarSign}
           iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          value={`$${(selectedBarId === 'all' ? dashboardStats.inventoryValue : barStats.find(b => b.id === selectedBarId)?.inventoryValue || 0).toLocaleString()}`}
+          value={`$${dashboardStats.inventoryValue.toLocaleString()}`}
           label="Valor en Inventario"
           change={dashboardStats.inventoryValueChange}
           changeLabel="vs mes pasado"
@@ -131,7 +173,7 @@ export function DashboardSection() {
           icon={AlertTriangle}
           iconBgColor="bg-amber-100"
           iconColor="text-amber-600"
-          value={selectedBarId === 'all' ? dashboardStats.lowStockCount : filteredAlerts.length}
+          value={filteredAlerts.length}
           label="Productos Stock Bajo"
           changeLabel="Requiere atención"
           delay={200}
@@ -140,7 +182,7 @@ export function DashboardSection() {
           icon={TrendingUp}
           iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
-          value={`$${(selectedBarId === 'all' ? dashboardStats.todaySales : barStats.find(b => b.id === selectedBarId)?.todaySales || 0).toLocaleString()}`}
+          value={`$${dashboardStats.todaySales.toLocaleString()}`}
           label="Salidas Hoy"
           change={dashboardStats.todaySalesChange}
           changeLabel="vs ayer"
@@ -158,20 +200,12 @@ export function DashboardSection() {
               delay={400}
             />
           </div>
-          {/* <div>
-            <CapacityChart
-              percentage={68}
-              currentLoad={850}
-              maxCapacity={1250}
-              delay={500}
-            />
-          </div> */}
         </div>
       )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Alerts & Sales */}
+        {/* Left Column */}
         <div className="space-y-6">
           <InventoryAlerts
             alerts={filteredAlerts}
@@ -183,7 +217,7 @@ export function DashboardSection() {
             }}
             delay={600}
           />
-          
+
           {selectedBarId !== 'all' && (
             <RecentSalesByBar
               barId={selectedBarId}
@@ -204,7 +238,6 @@ export function DashboardSection() {
           />
         </div>
       </div>
-
     </div>
   );
 }

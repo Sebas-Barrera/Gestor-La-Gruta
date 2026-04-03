@@ -1,438 +1,305 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { getProductStatus } from '@/data/mockData';
 import {
-  products as seedProducts,
-  productBarcodes as seedBarcodes,
-  inventoryMovements as seedMovements,
-} from '@/data/mockData';
-import type { Product, ProductBarcode, InventoryMovement, ReceptionSession, CreateBulkProductData } from '@/types';
-import { getLocalIsoDateString } from '@/lib/dates';
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react';
+import * as productsApi from '@/lib/api/products';
+import * as inventoryApi from '@/lib/api/inventory';
+import type {
+  Product,
+  ProductBarcode,
+  InventoryMovement,
+  ReceptionSession,
+  CreateBulkProductData,
+} from '@/types';
 import type { CreateProductData } from '@/components/admin/AddProductModal';
 import type { CreateBarcodeData } from '@/components/shared/AddBarcodeToProductModal';
 
-// ── localStorage keys ────────────────────────────────────────
-const KEYS = {
-  products: 'inv_products',
-  barcodes: 'inv_barcodes',
-  movements: 'inv_movements',
-  init: 'inv_initialized',
-} as const;
+// ── Context type ──────────────────────────────────────────────
 
-// ── Helpers de persistencia ──────────────────────────────────
-function genId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function loadProducts(): Product[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEYS.products) || '[]') as Omit<Product, 'status'>[];
-    return raw.map(p => ({ ...p, status: getProductStatus(p.stock, p.minStock) }));
-  } catch { return []; }
-}
-
-function saveProducts(products: Product[]) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const raw = products.map(({ status, ...rest }) => rest);
-  localStorage.setItem(KEYS.products, JSON.stringify(raw));
-}
-
-function loadBarcodes(): ProductBarcode[] {
-  try { return JSON.parse(localStorage.getItem(KEYS.barcodes) || '[]'); }
-  catch { return []; }
-}
-
-function saveBarcodes(barcodes: ProductBarcode[]) {
-  localStorage.setItem(KEYS.barcodes, JSON.stringify(barcodes));
-}
-
-function loadMovements(): InventoryMovement[] {
-  try { return JSON.parse(localStorage.getItem(KEYS.movements) || '[]'); }
-  catch { return []; }
-}
-
-function saveMovements(movements: InventoryMovement[]) {
-  localStorage.setItem(KEYS.movements, JSON.stringify(movements));
-}
-
-// ── Context type ─────────────────────────────────────────────
 interface InventoryContextType {
   products: Product[];
   productBarcodes: ProductBarcode[];
   inventoryMovements: InventoryMovement[];
+  loading: boolean;
 
-  addProduct: (data: CreateProductData) => Product;
-  addBulkProduct: (data: CreateBulkProductData) => Product;
-  updateProduct: (productId: string, updates: Partial<Product>) => void;
-  deleteProduct: (productId: string) => void;
-  addProductBarcode: (data: CreateBarcodeData) => ProductBarcode;
+  addProduct: (data: CreateProductData) => Promise<Product>;
+  addBulkProduct: (data: CreateBulkProductData) => Promise<Product>;
+  updateProduct: (productId: string, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
+  addProductBarcode: (data: CreateBarcodeData) => Promise<ProductBarcode>;
 
-  recordEntry: (productId: string, quantity: number, workerName: string, barId: string, notes?: string) => void;
-  recordExit: (productId: string, quantity: number, workerName: string, barId: string, notes?: string) => void;
-  adjustStock: (productId: string, newQuantity: number, workerName: string, barId: string, notes?: string) => void;
-  confirmBatchReception: (session: ReceptionSession, workerName: string) => void;
+  recordEntry: (
+    productId: string,
+    quantity: number,
+    workerName: string,
+    barId: string,
+    notes?: string,
+  ) => Promise<void>;
+  recordExit: (
+    productId: string,
+    quantity: number,
+    workerName: string,
+    barId: string,
+    notes?: string,
+  ) => Promise<void>;
+  adjustStock: (
+    productId: string,
+    newQuantity: number,
+    workerName: string,
+    barId: string,
+    notes?: string,
+  ) => Promise<void>;
+  confirmBatchReception: (
+    session: ReceptionSession,
+    workerName: string,
+  ) => Promise<void>;
 }
 
 const InventoryContext = createContext<InventoryContextType | null>(null);
 
-// ── Provider ─────────────────────────────────────────────────
+// ── Provider ──────────────────────────────────────────────────
+
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [productBarcodes, setProductBarcodes] = useState<ProductBarcode[]>([]);
   const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Seed from mock data on first run; load from localStorage on subsequent runs
+  // Load all inventory data from Supabase on mount
   useEffect(() => {
-    const isInit = localStorage.getItem(KEYS.init);
-    if (!isInit) {
-      saveProducts(seedProducts);
-      saveBarcodes(seedBarcodes);
-      saveMovements(seedMovements);
-      localStorage.setItem(KEYS.init, 'true');
+    async function load() {
+      try {
+        const [prods, barcodes] = await Promise.all([
+          productsApi.getAllProducts(),
+          productsApi.getAllBarcodes(),
+        ]);
+        setProducts(prods);
+        setProductBarcodes(barcodes);
+      } catch (err) {
+        console.error('[InventoryContext] Failed to load inventory:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-    setProducts(loadProducts());
-    setProductBarcodes(loadBarcodes());
-    setInventoryMovements(loadMovements());
+    load();
   }, []);
 
-  // ── Product mutations ────────────────────────────────────
-  const addProduct = useCallback((data: CreateProductData): Product => {
-    const id = genId('p');
+  // ── Product mutations ─────────────────────────────────────
 
-    // CRÍTICO: Si es una caja, convertir el stock de cajas a unidades individuales
-    // Ejemplo: 10 cajas de 24 piezas = 240 unidades individuales
-    const finalStock = data.isBoxBarcode && data.quantityPerBox
-      ? data.stock * data.quantityPerBox
-      : data.stock;
+  const addProduct = useCallback(async (data: CreateProductData): Promise<Product> => {
+    const newProduct = await productsApi.addProduct(data);
+    setProducts(prev => [...prev, newProduct]);
 
-    const newProduct: Product = {
-      id,
-      sku: data.sku,
-      name: data.name,
-      category: data.category,
-      subcategory: data.subcategory,
-      supplier: data.supplier,
-      stock: finalStock,  // Stock en unidades individuales
-      minStock: data.minStock,
-      maxStock: data.maxStock,
-      unit: data.unit,
-      price: data.price,
-      lastPurchase: getLocalIsoDateString(),
-      barId: data.barId,
-      barcode: data.barcode || undefined,
-      image: data.image || undefined,
-      isWeightBased: data.isWeightBased,
-      weightUnit: data.isWeightBased ? data.weightUnit : undefined,
-      status: getProductStatus(finalStock, data.minStock),
-    };
-
-    setProducts(prev => {
-      const next = [...prev, newProduct];
-      saveProducts(next);
-      return next;
-    });
-
-    // Auto-create default barcode(s) si el producto detectó uno
+    // Sync barcodes that were auto-created
     if (data.barcode) {
-      if (data.isBoxBarcode) {
-        // 1. Código principal: pertenece a la CAJA
-        const boxBarcode: ProductBarcode = {
-          id: genId('pb'),
-          productId: id,
-          barcode: data.barcode,
-          quantityPerScan: data.quantityPerBox || 1,
-          label: `Caja/Paquete de ${data.quantityPerBox || 1}`,
-          isDefault: true,
-          createdAt: new Date().toISOString(),
-        };
+      const barcodes = await productsApi.getProductBarcodes(newProduct.id);
+      setProductBarcodes(prev => [...prev, ...barcodes]);
+    }
 
-        const barcodesToCreate: ProductBarcode[] = [boxBarcode];
+    return newProduct;
+  }, []);
 
-        // 2. Código secundario: pertenece a la PIEZA (SOLO si existe)
-        if (data.individualBarcode && data.individualBarcode.trim()) {
-          const individualBarcode: ProductBarcode = {
-            id: genId('pb_ind'),
-            productId: id,
-            barcode: data.individualBarcode.trim(),
-            quantityPerScan: 1,
-            label: 'Individual',
-            isDefault: false, // La caja queda como principal
-            createdAt: new Date().toISOString(),
+  const addBulkProduct = useCallback(
+    async (data: CreateBulkProductData): Promise<Product> => {
+      const newProduct = await productsApi.addBulkProduct(data);
+      setProducts(prev => [...prev, newProduct]);
+      return newProduct;
+    },
+    [],
+  );
+
+  const updateProduct = useCallback(
+    async (productId: string, updates: Partial<Product>): Promise<void> => {
+      await productsApi.updateProduct(productId, updates);
+      setProducts(prev =>
+        prev.map(p => {
+          if (p.id !== productId) return p;
+          const updated = { ...p, ...updates };
+          updated.status = productsApi.computeStatus(updated.stock, updated.minStock);
+          return updated;
+        }),
+      );
+    },
+    [],
+  );
+
+  const deleteProduct = useCallback(async (productId: string): Promise<void> => {
+    await productsApi.deleteProduct(productId);
+    // Soft delete — remove from local state
+    setProducts(prev => prev.filter(p => p.id !== productId));
+  }, []);
+
+  // ── Barcode mutations ─────────────────────────────────────
+
+  const addProductBarcode = useCallback(
+    async (data: CreateBarcodeData): Promise<ProductBarcode> => {
+      const pb = await productsApi.addProductBarcode(data);
+      setProductBarcodes(prev => [...prev, pb]);
+      return pb;
+    },
+    [],
+  );
+
+  // ── Stock mutations ───────────────────────────────────────
+
+  const recordEntry = useCallback(
+    async (
+      productId: string,
+      quantity: number,
+      workerName: string,
+      barId: string,
+      notes?: string,
+    ): Promise<void> => {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const { newStock, movement } = await inventoryApi.recordEntry(
+        productId,
+        quantity,
+        workerName,
+        barId,
+        product.name,
+        product.stock,
+        product.unit,
+        notes,
+      );
+
+      setProducts(prev =>
+        prev.map(p =>
+          p.id === productId
+            ? { ...p, stock: newStock, status: productsApi.computeStatus(newStock, p.minStock) }
+            : p,
+        ),
+      );
+      setInventoryMovements(prev => [movement, ...prev]);
+    },
+    [products],
+  );
+
+  const recordExit = useCallback(
+    async (
+      productId: string,
+      quantity: number,
+      workerName: string,
+      barId: string,
+      notes?: string,
+    ): Promise<void> => {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const { newStock, movement } = await inventoryApi.recordExit(
+        productId,
+        quantity,
+        workerName,
+        barId,
+        product.name,
+        product.stock,
+        product.unit,
+        notes,
+      );
+
+      setProducts(prev =>
+        prev.map(p =>
+          p.id === productId
+            ? { ...p, stock: newStock, status: productsApi.computeStatus(newStock, p.minStock) }
+            : p,
+        ),
+      );
+      setInventoryMovements(prev => [movement, ...prev]);
+    },
+    [products],
+  );
+
+  const adjustStock = useCallback(
+    async (
+      productId: string,
+      newQuantity: number,
+      workerName: string,
+      barId: string,
+      notes?: string,
+    ): Promise<void> => {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const { newStock, movement } = await inventoryApi.adjustStock(
+        productId,
+        newQuantity,
+        workerName,
+        barId,
+        product.name,
+        product.stock,
+        product.unit,
+        notes,
+      );
+
+      setProducts(prev =>
+        prev.map(p =>
+          p.id === productId
+            ? { ...p, stock: newStock, status: productsApi.computeStatus(newStock, p.minStock) }
+            : p,
+        ),
+      );
+      setInventoryMovements(prev => [movement, ...prev]);
+    },
+    [products],
+  );
+
+  const confirmBatchReception = useCallback(
+    async (session: ReceptionSession, workerName: string): Promise<void> => {
+      const movements = await inventoryApi.confirmBatchReception(session, workerName);
+
+      // Update local state — accumulate stock for same product appearing multiple times
+      setProducts(prev => {
+        const next = [...prev];
+        for (const item of session.items) {
+          const idx = next.findIndex(p => p.id === item.productId);
+          if (idx === -1) continue;
+          const newStock = next[idx].stock + item.totalIndividualQty;
+          next[idx] = {
+            ...next[idx],
+            stock: newStock,
+            status: productsApi.computeStatus(newStock, next[idx].minStock),
           };
-          barcodesToCreate.push(individualBarcode);
         }
+        return next;
+      });
 
-        setProductBarcodes(prev => {
-          const next = [...prev, ...barcodesToCreate];
-          saveBarcodes(next);
-          return next;
-        });
-      } else {
-        // Flujo tradicional: escanearon una botella suelta
-        const pb: ProductBarcode = {
-          id: genId('pb'),
-          productId: id,
-          barcode: data.barcode,
-          quantityPerScan: 1,
-          label: 'Individual',
-          isDefault: true,
-          createdAt: new Date().toISOString(),
-        };
-        setProductBarcodes(prev => {
-          const next = [...prev, pb];
-          saveBarcodes(next);
-          return next;
-        });
+      if (movements.length > 0) {
+        setInventoryMovements(prev => [...movements, ...prev]);
       }
-    }
-
-    // Emitir el movimiento de entrada en historial (ingreso inicial) si el stock > 0
-    if (finalStock > 0) {
-      const initialMovement: InventoryMovement = {
-        id: genId('mov'),
-        productId: id,
-        productName: data.name,
-        type: 'in',
-        barId: data.barId,
-        workerId: 'admin', // Hardcoded fallback for auto-creation
-        workerName: 'Administrador (Alta)',
-        previousQuantity: 0,
-        newQuantity: finalStock,
-        quantity: finalStock,
-        unit: data.unit,
-        timestamp: new Date().toISOString(),
-        notes: data.isBoxBarcode
-          ? `Ingreso inicial: ${data.stock} caja(s) × ${data.quantityPerBox} piezas = ${finalStock} unidades`
-          : `Ingreso inicial de stock automático`,
-      };
-      setInventoryMovements(prevM => {
-        const next = [initialMovement, ...prevM];
-        saveMovements(next);
-        return next;
-      });
-    }
-
-    return newProduct;
-  }, []);
-
-  const addBulkProduct = useCallback((data: CreateBulkProductData): Product => {
-    const id = genId('p');
-    const newProduct: Product = {
-      id,
-      sku: data.sku,
-      name: data.name,
-      category: data.category,
-      subcategory: data.subcategory,
-      supplier: data.supplier,
-      stock: data.stock,
-      minStock: data.minStock,
-      maxStock: data.maxStock,
-      unit: data.weightUnit,
-      price: data.price,
-      lastPurchase: getLocalIsoDateString(),
-      barId: data.barId,
-      isWeightBased: true,
-      weightUnit: data.weightUnit,
-      status: getProductStatus(data.stock, data.minStock),
-    };
-
-    setProducts(prev => {
-      const next = [...prev, newProduct];
-      saveProducts(next);
-      return next;
-    });
-
-    return newProduct;
-  }, []);
-
-  const updateProduct = useCallback((productId: string, updates: Partial<Product>) => {
-    setProducts(prev => {
-      const next = prev.map(p => {
-        if (p.id !== productId) return p;
-        const updated = { ...p, ...updates, id: p.id };
-        updated.status = getProductStatus(updated.stock, updated.minStock);
-        return updated;
-      });
-      saveProducts(next);
-      return next;
-    });
-  }, []);
-
-  const deleteProduct = useCallback((productId: string) => {
-    setProducts(prev => {
-      const next = prev.filter(p => p.id !== productId);
-      saveProducts(next);
-      return next;
-    });
-  }, []);
-
-  // ── Barcode mutations ────────────────────────────────────
-  const addProductBarcode = useCallback((data: CreateBarcodeData): ProductBarcode => {
-    const pb: ProductBarcode = {
-      id: genId('pb'),
-      productId: data.productId,
-      barcode: data.barcode,
-      quantityPerScan: data.quantityPerScan,
-      label: data.label,
-      isDefault: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    setProductBarcodes(prev => {
-      const next = [...prev, pb];
-      saveBarcodes(next);
-      return next;
-    });
-
-    return pb;
-  }, []);
-
-  // ── Stock mutations ──────────────────────────────────────
-  const createMovement = useCallback((
-    product: Product,
-    type: 'in' | 'out',
-    quantity: number,
-    workerName: string,
-    barId: string,
-    newStock: number,
-    notes?: string,
-  ): InventoryMovement => {
-    return {
-      id: genId('m'),
-      barId,
-      productId: product.id,
-      productName: product.name,
-      workerId: '',
-      workerName,
-      type,
-      previousQuantity: product.stock,
-      newQuantity: newStock,
-      quantity,
-      unit: product.unit,
-      timestamp: new Date().toISOString(),
-      notes,
-    };
-  }, []);
-
-  const recordEntry = useCallback((
-    productId: string, quantity: number, workerName: string, barId: string, notes?: string,
-  ) => {
-    setProducts(prev => {
-      const idx = prev.findIndex(p => p.id === productId);
-      if (idx === -1) return prev;
-      const product = prev[idx];
-      const newStock = product.stock + quantity;
-      const updated = { ...product, stock: newStock, status: getProductStatus(newStock, product.minStock) };
-
-      const movement = createMovement(product, 'in', quantity, workerName, barId, newStock, notes);
-      setInventoryMovements(prevM => {
-        const next = [movement, ...prevM];
-        saveMovements(next);
-        return next;
-      });
-
-      const next = [...prev];
-      next[idx] = updated;
-      saveProducts(next);
-      return next;
-    });
-  }, [createMovement]);
-
-  const recordExit = useCallback((
-    productId: string, quantity: number, workerName: string, barId: string, notes?: string,
-  ) => {
-    setProducts(prev => {
-      const idx = prev.findIndex(p => p.id === productId);
-      if (idx === -1) return prev;
-      const product = prev[idx];
-      const newStock = Math.max(0, product.stock - quantity);
-      const updated = { ...product, stock: newStock, status: getProductStatus(newStock, product.minStock) };
-
-      const movement = createMovement(product, 'out', quantity, workerName, barId, newStock, notes);
-      setInventoryMovements(prevM => {
-        const next = [movement, ...prevM];
-        saveMovements(next);
-        return next;
-      });
-
-      const next = [...prev];
-      next[idx] = updated;
-      saveProducts(next);
-      return next;
-    });
-  }, [createMovement]);
-
-  const adjustStock = useCallback((
-    productId: string, newQuantity: number, workerName: string, barId: string, notes?: string,
-  ) => {
-    setProducts(prev => {
-      const idx = prev.findIndex(p => p.id === productId);
-      if (idx === -1) return prev;
-      const product = prev[idx];
-      const diff = newQuantity - product.stock;
-      const type = diff > 0 ? 'in' : 'out';
-      const updated = { ...product, stock: newQuantity, status: getProductStatus(newQuantity, product.minStock) };
-
-      const movement = createMovement(product, type as 'in' | 'out', Math.abs(diff), workerName, barId, newQuantity, notes);
-      setInventoryMovements(prevM => {
-        const next = [movement, ...prevM];
-        saveMovements(next);
-        return next;
-      });
-
-      const next = [...prev];
-      next[idx] = updated;
-      saveProducts(next);
-      return next;
-    });
-  }, [createMovement]);
-
-  const confirmBatchReception = useCallback((session: ReceptionSession, workerName: string) => {
-    setProducts(prev => {
-      const next = [...prev];
-      const newMovements: InventoryMovement[] = [];
-
-      for (const item of session.items) {
-        const idx = next.findIndex(p => p.id === item.productId);
-        if (idx === -1) continue;
-        const product = next[idx];
-        const newStock = product.stock + item.totalIndividualQty;
-        const movement = createMovement(product, 'in', item.totalIndividualQty, workerName, session.barId, newStock, session.notes);
-        newMovements.push(movement);
-        next[idx] = { ...product, stock: newStock, status: getProductStatus(newStock, product.minStock) };
-      }
-
-      setInventoryMovements(prevM => {
-        const updated = [...newMovements, ...prevM];
-        saveMovements(updated);
-        return updated;
-      });
-
-      saveProducts(next);
-      return next;
-    });
-  }, [createMovement]);
+    },
+    [],
+  );
 
   return (
-    <InventoryContext.Provider value={{
-      products,
-      productBarcodes,
-      inventoryMovements,
-      addProduct,
-      addBulkProduct,
-      updateProduct,
-      deleteProduct,
-      addProductBarcode,
-      recordEntry,
-      recordExit,
-      adjustStock,
-      confirmBatchReception,
-    }}>
+    <InventoryContext.Provider
+      value={{
+        products,
+        productBarcodes,
+        inventoryMovements,
+        loading,
+        addProduct,
+        addBulkProduct,
+        updateProduct,
+        deleteProduct,
+        addProductBarcode,
+        recordEntry,
+        recordExit,
+        adjustStock,
+        confirmBatchReception,
+      }}
+    >
       {children}
     </InventoryContext.Provider>
   );
 }
 
-// ── Hook ─────────────────────────────────────────────────────
+// ── Hook ──────────────────────────────────────────────────────
+
 export function useInventory(): InventoryContextType {
   const context = useContext(InventoryContext);
   if (!context) throw new Error('useInventory must be used within InventoryProvider');

@@ -1,70 +1,109 @@
-import { useState, useCallback } from 'react';
-import type { Bar, Worker, InventoryMovement } from '@/types';
-import { getLocalIsoDateString } from '@/lib/dates';
-import { bars as mockBars, workers as mockWorkers, inventoryMovements as mockMovements } from '@/data/mockData';
+import { useState, useCallback, useEffect } from 'react';
+import type { Bar, Worker } from '@/types';
+import * as barsApi from '@/lib/api/bars';
+import * as workersApi from '@/lib/api/workers';
+import { loadBars, loadWorkers } from '@/lib/api/auth';
 
 export function useBarManagement() {
-  const [bars, setBars] = useState<Bar[]>(mockBars);
-  const [workers, setWorkers] = useState<Worker[]>(mockWorkers);
-  const [movements] = useState<InventoryMovement[]>(mockMovements);
+  const [bars, setBars] = useState<Bar[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load data from Supabase on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const [barsList, workersList] = await Promise.all([
+          loadBars(),
+          loadWorkers(),
+        ]);
+        setBars(barsList);
+        setWorkers(workersList);
+      } catch (err) {
+        console.error('[useBarManagement] Failed to load:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   // --- Bars CRUD ---
-  const addBar = useCallback((data: Omit<Bar, 'id'>) => {
-    const newBar: Bar = { ...data, id: `bar-${Date.now()}` };
+
+  const addBar = useCallback(async (data: Omit<Bar, 'id' | 'isActive'>): Promise<Bar> => {
+    const newBar = await barsApi.addBar(data);
     setBars(prev => [...prev, newBar]);
     return newBar;
   }, []);
 
-  const updateBar = useCallback((id: string, data: Partial<Bar>) => {
+  const updateBar = useCallback(async (id: string, data: Partial<Bar>): Promise<void> => {
+    await barsApi.updateBar(id, data);
     setBars(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
   }, []);
 
-  const deleteBar = useCallback((id: string) => {
+  /** Soft delete — removes from local state, sets is_active=false in DB. */
+  const deleteBar = useCallback(async (id: string): Promise<void> => {
+    await barsApi.updateBar(id, { isActive: false });
     setBars(prev => prev.filter(b => b.id !== id));
   }, []);
 
   // --- Workers CRUD ---
-  const addWorker = useCallback((data: Omit<Worker, 'id' | 'createdAt'>) => {
-    const newWorker: Worker = {
-      ...data,
-      id: `w-${Date.now()}`,
-      createdAt: getLocalIsoDateString(),
-    };
-    setWorkers(prev => [...prev, newWorker]);
-    return newWorker;
-  }, []);
 
-  const updateWorker = useCallback((id: string, data: Partial<Worker>) => {
-    setWorkers(prev => prev.map(w => w.id === id ? { ...w, ...data } : w));
-  }, []);
+  const addWorker = useCallback(
+    async (data: Omit<Worker, 'id' | 'createdAt'>): Promise<Worker> => {
+      const newWorker = await workersApi.addWorker({
+        name: data.name,
+        pin: data.pin,
+        phone: data.phone,
+        barIds: data.barIds,
+        avatar: data.avatar,
+      });
+      setWorkers(prev => [...prev, newWorker]);
+      return newWorker;
+    },
+    [],
+  );
 
-  const deleteWorker = useCallback((id: string) => {
+  const updateWorker = useCallback(
+    async (id: string, data: Partial<Worker>): Promise<void> => {
+      await workersApi.updateWorker(id, data);
+      setWorkers(prev => prev.map(w => w.id === id ? { ...w, ...data } : w));
+    },
+    [],
+  );
+
+  /** Soft delete — removes from local state, sets is_active=false in DB. */
+  const deleteWorker = useCallback(async (id: string): Promise<void> => {
+    await workersApi.updateWorker(id, { isActive: false });
     setWorkers(prev => prev.filter(w => w.id !== id));
   }, []);
 
-  const removeWorkerFromBar = useCallback((workerId: string, barId: string) => {
-    setWorkers(prev => prev.map(w =>
-      w.id === workerId
-        ? { ...w, barIds: w.barIds.filter(bid => bid !== barId) }
-        : w
-    ));
-  }, []);
-
-
+  const removeWorkerFromBar = useCallback(
+    async (workerId: string, barId: string): Promise<void> => {
+      const worker = workers.find(w => w.id === workerId);
+      if (!worker) return;
+      const newBarIds = worker.barIds.filter(bid => bid !== barId);
+      await workersApi.updateWorker(workerId, { barIds: newBarIds });
+      setWorkers(prev =>
+        prev.map(w =>
+          w.id === workerId ? { ...w, barIds: newBarIds } : w,
+        ),
+      );
+    },
+    [workers],
+  );
 
   // --- Queries ---
-  const getWorkersForBar = useCallback((barId: string) => {
-    return workers.filter(w => w.barIds.includes(barId));
-  }, [workers]);
 
-  const getMovementsForBar = useCallback((barId: string) => {
-    return movements.filter(m => m.barId === barId);
-  }, [movements]);
+  const getWorkersForBar = useCallback(
+    (barId: string) => workers.filter(w => w.barIds.includes(barId)),
+    [workers],
+  );
 
   return {
     bars,
     workers,
-    movements,
+    loading,
     addBar,
     updateBar,
     deleteBar,
@@ -73,6 +112,5 @@ export function useBarManagement() {
     deleteWorker,
     removeWorkerFromBar,
     getWorkersForBar,
-    getMovementsForBar,
   };
 }

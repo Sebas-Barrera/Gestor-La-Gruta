@@ -54,6 +54,24 @@ interface KeyboardContextValue {
   mode: KeyboardMode;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Busca el ancestro scrollable más cercano del elemento dado.
+ * Útil para agregar padding y hacer scroll cuando el teclado cubre un input.
+ */
+function findScrollableAncestor(el: HTMLElement): HTMLElement | null {
+  let parent = el.parentElement;
+  while (parent && parent !== document.body) {
+    const { overflowY } = getComputedStyle(parent);
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return null;
+}
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const KeyboardContext = createContext<KeyboardContextValue | null>(null);
@@ -77,11 +95,6 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
    */
   const [inputEmpty, setInputEmpty] = useState(true);
 
-  /** Valor actual del input activo, mostrado en la barra de previsualización */
-  const [inputValue, setInputValue] = useState('');
-
-  /** Placeholder del input activo, mostrado cuando inputValue está vacío */
-  const [inputPlaceholder, setInputPlaceholder] = useState('');
 
   /**
    * Ref al OBJETO RefObject del input/textarea activo (no a .current).
@@ -96,6 +109,11 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
    * Usado por el listener global de mousedown para detectar clicks fuera del teclado.
    */
   const keyboardContainerRef = useRef<HTMLDivElement | null>(null);
+
+  /** Ref al contenedor scrollable que recibió padding extra por el teclado */
+  const scrollableRef = useRef<HTMLElement | null>(null);
+  /** Padding original del contenedor scrollable, para restaurarlo al cerrar */
+  const originalPaddingRef = useRef<string>('');
 
   /**
    * Abre el teclado y lo enlaza con el input/textarea especificado.
@@ -112,16 +130,46 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
       setMode(keyboardMode);
       setIsOpen(true);
       setInputEmpty(!ref.current?.value);
-      setInputValue(ref.current?.value ?? '');
-      setInputPlaceholder(ref.current?.placeholder ?? '');
 
-      // Delay para ejecutarse DESPUÉS de que Radix Dialog termine su
-      // manejo de foco (FocusScope/focus trap). Sin esto, Radix roba
-      // el foco del input y el teclado no puede escribir.
+      // Delay para ejecutarse DESPUÉS de que:
+      // 1. Radix Dialog termine su manejo de foco (FocusScope/focus trap)
+      // 2. La animación del teclado se complete (duration-300)
       setTimeout(() => {
-        ref.current?.focus({ preventScroll: true });
-        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+        const inputEl = ref.current;
+        if (!inputEl) return;
+
+        inputEl.focus({ preventScroll: true });
+
+        // Agregar padding al contenedor scrollable para crear espacio sobre el teclado
+        const keyboardEl = keyboardContainerRef.current;
+        if (!keyboardEl) return;
+
+        const keyboardHeight = keyboardEl.offsetHeight;
+        const scrollable = findScrollableAncestor(inputEl);
+
+        if (scrollable && scrollableRef.current !== scrollable) {
+          // Restaurar padding del contenedor anterior si cambió
+          if (scrollableRef.current) {
+            scrollableRef.current.style.paddingBottom = originalPaddingRef.current;
+          }
+          scrollableRef.current = scrollable;
+          originalPaddingRef.current = scrollable.style.paddingBottom;
+          scrollable.style.paddingBottom = `${keyboardHeight}px`;
+        }
+
+        // Scroll del input para que quede visible arriba del teclado
+        requestAnimationFrame(() => {
+          const inputRect = inputEl.getBoundingClientRect();
+          const keyboardTop = keyboardEl.getBoundingClientRect().top;
+
+          if (inputRect.bottom > keyboardTop - 16) {
+            const overlap = inputRect.bottom - keyboardTop + 16;
+            if (scrollable) {
+              scrollable.scrollBy({ top: overlap, behavior: 'smooth' });
+            }
+          }
+        });
+      }, 350);
     },
     [],
   );
@@ -134,6 +182,13 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
   const closeKeyboard = useCallback(() => {
     setIsOpen(false);
     activeInputRef.current?.current?.blur();
+
+    // Restaurar padding original del contenedor scrollable
+    if (scrollableRef.current) {
+      scrollableRef.current.style.paddingBottom = originalPaddingRef.current;
+      scrollableRef.current = null;
+      originalPaddingRef.current = '';
+    }
   }, []);
 
   /**
@@ -246,7 +301,6 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
 
     // Notificar si el input quedó vacío (para auto-capitalize)
     setInputEmpty(nextValue === '');
-    setInputValue(nextValue);
 
     // Restaurar posición del cursor después del render
     requestAnimationFrame(() => {
@@ -268,8 +322,6 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
           mode={mode}
           containerRef={keyboardContainerRef}
           inputEmpty={inputEmpty}
-          inputValue={inputValue}
-          inputPlaceholder={inputPlaceholder}
         />,
         document.body
       )}

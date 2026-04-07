@@ -56,10 +56,6 @@ interface OnScreenKeyboardProps {
    * para que la primera letra siempre sea mayúscula (auto-capitalize).
    */
   inputEmpty?: boolean;
-  /** Valor actual del input activo, mostrado en la barra de previsualización */
-  inputValue?: string;
-  /** Placeholder del input activo, mostrado cuando el valor está vacío */
-  inputPlaceholder?: string;
 }
 
 // ─── Keyboard Layouts ─────────────────────────────────────────────────────────
@@ -100,8 +96,6 @@ export function OnScreenKeyboard({
   mode = 'alpha',
   containerRef,
   inputEmpty,
-  inputValue = '',
-  inputPlaceholder = '',
 }: OnScreenKeyboardProps) {
   /** Estado de mayúsculas/minúsculas (solo aplica en modo alpha) */
   const [isUpperCase, setIsUpperCase] = useState(true);
@@ -247,19 +241,6 @@ export function OnScreenKeyboard({
           <X className="w-4 h-4" />
           Cerrar
         </button>
-      </div>
-
-      {/* Barra de previsualización: muestra lo que se está escribiendo */}
-      <div className="mx-4 mb-2 px-4 py-2.5 bg-white rounded-xl border border-gray-200 shadow-sm min-h-[44px] flex items-center">
-        {inputValue ? (
-          <span className="text-base text-gray-800 truncate w-full text-left">
-            {inputValue}
-          </span>
-        ) : (
-          <span className="text-base text-gray-400 truncate w-full text-left">
-            {inputPlaceholder || 'Escribe aquí...'}
-          </span>
-        )}
       </div>
 
       <div className="px-4 pb-5">

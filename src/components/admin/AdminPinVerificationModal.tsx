@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { KeyRound } from 'lucide-react';
 import { CodeKeypad } from '@/components/shared/CodeKeypad';
@@ -62,10 +62,20 @@ export function AdminPinVerificationModal({
     }
   }, [pin, verifyAdminPin, reset, onVerified, attempts]);
 
+  const submittedRef = useRef(false);
+
   const handleChange = useCallback((value: string) => {
     setPin(value);
+    submittedRef.current = false;
     if (error) setError('');
   }, [error]);
+
+  useEffect(() => {
+    if (pin.length === 4 && !submittedRef.current) {
+      submittedRef.current = true;
+      handleSubmit();
+    }
+  }, [pin, handleSubmit]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

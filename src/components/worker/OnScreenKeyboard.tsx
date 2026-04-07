@@ -21,10 +21,10 @@
  * @module OnScreenKeyboard
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { RefObject } from 'react';
-import { cn } from '@/lib/utils';
-import { Delete, CornerDownLeft, X, ArrowBigUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import type { RefObject } from "react";
+import { cn } from "@/lib/utils";
+import { Delete, CornerDownLeft, X, ArrowBigUp } from "lucide-react";
 
 /** Tiempo en ms que se debe mantener presionado DEL para borrar todo */
 const LONG_PRESS_MS = 600;
@@ -43,7 +43,7 @@ interface OnScreenKeyboardProps {
   /** Callback al pulsar el botón de cierre */
   onClose: () => void;
   /** Modo del teclado: completo (alpha) o solo números (numeric) */
-  mode?: 'alpha' | 'numeric';
+  mode?: "alpha" | "numeric";
   /**
    * Ref al contenedor del teclado.
    * El KeyboardProvider lo usa para detectar clicks "dentro" del teclado
@@ -61,30 +61,30 @@ interface OnScreenKeyboardProps {
 // ─── Keyboard Layouts ─────────────────────────────────────────────────────────
 
 const alphaRowsUpper = [
-  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ñ'],
-  ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ñ"],
+  ["Z", "X", "C", "V", "B", "N", "M"],
 ];
 
 const alphaRowsLower = [
-  ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ñ'],
-  ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
+  ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+  ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"],
+  ["z", "x", "c", "v", "b", "n", "m"],
 ];
 
 /** Layout de símbolos/números (página "123") */
 const symbolRows = [
-  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-  ['@', '#', '$', '%', '&', '-', '_', '+', '=', '*'],
-  ['(', ')', '!', '?', "'", '"', '/', ':', ';', ','],
+  ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+  ["@", "#", "$", "%", "&", "-", "_", "+", "=", "*"],
+  ["(", ")", "!", "?", "'", '"', "/", ":", ";", ","],
 ];
 
 /** Layout del teclado numérico */
 const numericKeys = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  ['.', '0', 'DEL'],
+  ["1", "2", "3"],
+  ["4", "5", "6"],
+  ["7", "8", "9"],
+  [".", "0", "DEL"],
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -93,24 +93,46 @@ export function OnScreenKeyboard({
   visible,
   onKeyPress,
   onClose,
-  mode = 'alpha',
+  mode = "alpha",
   containerRef,
   inputEmpty,
 }: OnScreenKeyboardProps) {
-  /** Estado de mayúsculas/minúsculas (solo aplica en modo alpha) */
-  const [isUpperCase, setIsUpperCase] = useState(true);
-  /** Página activa en modo alpha: letras o símbolos/números */
-  const [page, setPage] = useState<'letters' | 'symbols'>('letters');
+  /**
+   * Estado de Shift/Caps:
+   *   'off'   → minúsculas
+   *   'once'  → una letra en mayúscula, luego vuelve a 'off'
+   *   'lock'  → caps lock (todas mayúsculas hasta desactivar)
+   */
+  const [shiftState, setShiftState] = useState<"off" | "once" | "lock">("once");
+  const lastShiftTapRef = useRef(0);
 
-  /** Resetear a mayúsculas cuando el input queda vacío */
+  /** Página activa en modo alpha: letras o símbolos/números */
+  const [page, setPage] = useState<"letters" | "symbols">("letters");
+
+  const isUpperCase = shiftState !== "off";
+
+  /** Resetear a 'once' (primera letra mayúscula) cuando el input queda vacío */
   useEffect(() => {
-    if (inputEmpty) setIsUpperCase(true);
+    if (inputEmpty) setShiftState("once");
   }, [inputEmpty]);
 
   /** Resetear a página de letras cuando el teclado se oculta o cambia de modo */
   useEffect(() => {
-    if (!visible) setPage('letters');
+    if (!visible) setPage("letters");
   }, [visible, mode]);
+
+  /** Maneja tap en Shift: un tap = once, doble tap = lock, tap en lock = off */
+  const handleShiftTap = useCallback(() => {
+    const now = Date.now();
+    const elapsed = now - lastShiftTapRef.current;
+    lastShiftTapRef.current = now;
+
+    setShiftState((prev) => {
+      if (prev === "lock") return "off";
+      if (prev === "once" && elapsed < 400) return "lock";
+      return "once";
+    });
+  }, []);
 
   const alphaRows = isUpperCase ? alphaRowsUpper : alphaRowsLower;
 
@@ -131,13 +153,13 @@ export function OnScreenKeyboard({
       didLongPressRef.current = false;
       deleteTimerRef.current = setTimeout(() => {
         didLongPressRef.current = true;
-        onKeyPress('ClearAll');
+        onKeyPress("ClearAll");
       }, LONG_PRESS_MS);
     },
     onPointerUp: () => {
       clearDeleteTimer();
       if (!didLongPressRef.current) {
-        onKeyPress('Backspace');
+        onKeyPress("Backspace");
       }
     },
     onPointerCancel: clearDeleteTimer,
@@ -145,17 +167,17 @@ export function OnScreenKeyboard({
   };
 
   const handleKey = (key: string) => {
-    if (key === 'DEL') {
-      onKeyPress('Backspace');
-    } else if (key === 'SPACE') {
-      onKeyPress(' ');
-    } else if (key === 'ENTER') {
-      onKeyPress('Enter');
+    if (key === "DEL") {
+      onKeyPress("Backspace");
+    } else if (key === "SPACE") {
+      onKeyPress(" ");
+    } else if (key === "ENTER") {
+      onKeyPress("Enter");
     } else {
       onKeyPress(key);
-      // Auto-minúsculas después de escribir la primera letra
-      if (isUpperCase && /^[a-zA-ZñÑ]$/.test(key)) {
-        setIsUpperCase(false);
+      // Auto-minúsculas después de escribir la primera letra (solo en modo 'once')
+      if (shiftState === "once" && /^[a-zA-ZñÑ]$/.test(key)) {
+        setShiftState("off");
       }
     }
   };
@@ -168,46 +190,55 @@ export function OnScreenKeyboard({
   //   - Las teclas usan flex-1 para expandirse al ancho disponible del monitor
 
   const keyBase =
-    'flex items-center justify-center rounded-xl border font-semibold active:scale-95 transition-all duration-75 select-none touch-none';
+    "flex items-center justify-center rounded-xl border font-semibold active:scale-95 transition-all duration-75 select-none touch-none";
 
   const keyRegular = cn(
     keyBase,
-    'flex-1 h-14 text-lg',
-    'bg-white border-gray-200 text-gray-800',
-    'hover:bg-blue-50 hover:border-blue-300',
-    'shadow-sm shadow-gray-200',
-    'active:bg-blue-100',
+    "flex-1 h-14 text-lg",
+    "bg-white border-gray-200 text-gray-800",
+    "hover:bg-blue-50 hover:border-blue-300",
+    "shadow-sm shadow-gray-200",
+    "active:bg-blue-100",
   );
 
   const keyAction = cn(
     keyBase,
-    'w-[72px] h-14',
-    'bg-gray-100 border-gray-300 text-gray-600',
-    'hover:bg-gray-200',
+    "w-[96px] h-14",
+    "bg-gray-100 border-gray-300 text-gray-600",
+    "hover:bg-gray-200",
+  );
+
+  const keyDelete = cn(
+    keyBase,
+    "w-[120px] h-14",
+    "bg-gray-100 border-gray-300 text-gray-600",
+    "hover:bg-gray-200",
   );
 
   const keyBlue = cn(
     keyBase,
-    'w-20 h-14',
-    'bg-blue-500 border-blue-600 text-white',
-    'hover:bg-blue-600',
-    'shadow-sm shadow-blue-200',
+    "w-20 h-14",
+    "bg-blue-500 border-blue-600 text-white",
+    "hover:bg-blue-600",
+    "shadow-sm shadow-blue-200",
   );
 
   const keyShift = cn(
     keyBase,
-    'w-[72px] h-14',
-    isUpperCase
-      ? 'bg-blue-500 border-blue-600 text-white'
-      : 'bg-gray-100 border-gray-300 text-gray-600',
-    'hover:opacity-80',
+    "w-[120px] h-14",
+    shiftState === "lock"
+      ? "bg-blue-600 border-blue-700 text-white"
+      : shiftState === "once"
+        ? "bg-blue-500 border-blue-600 text-white"
+        : "bg-gray-100 border-gray-300 text-gray-600",
+    "hover:opacity-80",
   );
 
   const keySpecial = cn(
     keyBase,
-    'flex-1 h-12 text-base',
-    'bg-gray-50 border-gray-200 text-gray-600',
-    'hover:bg-gray-100',
+    "flex-1 h-12 text-base",
+    "bg-gray-50 border-gray-200 text-gray-600",
+    "hover:bg-gray-100",
   );
 
   return (
@@ -216,244 +247,259 @@ export function OnScreenKeyboard({
         ref={containerRef}
         data-keyboard-container="true"
         onPointerDown={(e) => e.stopPropagation()}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: "auto" }}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[9999]',
-          'bg-gray-100/95 backdrop-blur-sm border-t border-gray-300',
-          'shadow-[0_-4px_24px_rgba(0,0,0,0.12)]',
-          'transition-transform duration-300 ease-out',
-          visible ? 'translate-y-0' : 'translate-y-full'
+          "fixed bottom-0 left-0 right-0 z-[9999]",
+          "bg-gray-100/95 backdrop-blur-sm border-t border-gray-300",
+          "shadow-[0_-4px_24px_rgba(0,0,0,0.12)]",
+          "transition-transform duration-300 ease-out",
+          visible ? "translate-y-0" : "translate-y-full",
         )}
       >
-      {/* Barra superior: indicador + botón cerrar */}
-      <div className="flex items-center justify-between px-4 pt-2 pb-1">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-          <span className="text-xs text-gray-500 font-medium">
-            {mode === 'numeric' ? 'Teclado Numérico' : 'Teclado'}
-          </span>
+        {/* Barra superior: indicador + botón cerrar */}
+        <div className="flex items-center justify-between px-4 pt-2 pb-1">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            <span className="text-xs text-gray-500 font-medium">
+              {mode === "numeric" ? "Teclado Numérico" : "Teclado"}
+            </span>
+          </div>
+          <button
+            onMouseDown={(e) => e.preventDefault()} // Evitar blur del input al cerrar
+            onPointerUp={onClose}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-200 transition-colors min-h-[44px]"
+          >
+            <X className="w-4 h-4" />
+            Cerrar
+          </button>
         </div>
-        <button
-          onMouseDown={(e) => e.preventDefault()} // Evitar blur del input al cerrar
-          onPointerUp={onClose}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-200 transition-colors min-h-[44px]"
-        >
-          <X className="w-4 h-4" />
-          Cerrar
-        </button>
-      </div>
 
-      <div className="px-4 pb-5">
-        {/* ─── MODO ALPHA ─── */}
-        {mode === 'alpha' ? (
-          <div className="space-y-2.5">
-            {page === 'letters' ? (
-              <>
-                {/* Filas de letras */}
-                {alphaRows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-2">
-                    {/* Botón Shift en la fila 3 (izquierda) */}
-                    {rowIndex === 2 && (
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onPointerUp={() => setIsUpperCase((prev) => !prev)}
-                        className={keyShift}
-                        aria-label="Shift"
-                        title={isUpperCase ? 'Minúsculas' : 'Mayúsculas'}
-                      >
-                        <ArrowBigUp className="w-6 h-6" />
-                      </button>
-                    )}
-
-                    {row.map((key) => (
-                      <button
-                        key={key}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onPointerUp={() => handleKey(key)}
-                        className={keyRegular}
-                      >
-                        {key}
-                      </button>
-                    ))}
-
-                    {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
-                    {rowIndex === 2 && (
-                      <button
-                        {...deleteProps}
-                        className={keyAction}
-                        aria-label="Borrar"
-                      >
-                        <Delete className="w-6 h-6" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {/* Fila inferior: 123 + espacio + enter */}
-                <div className="flex gap-2 items-center">
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => setPage('symbols')}
-                    className={cn(keyAction, 'text-sm')}
-                  >
-                    123
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey('SPACE')}
-                    className={cn(
-                      keyBase,
-                      'flex-1 h-14 text-base text-gray-500',
-                      'bg-white border-gray-200 hover:bg-blue-50',
-                      'shadow-sm',
-                    )}
-                  >
-                    espacio
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => { handleKey('ENTER'); onClose(); }}
-                    className={keyBlue}
-                    aria-label="Enter"
-                  >
-                    <CornerDownLeft className="w-6 h-6" />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* ─── Página de símbolos/números ─── */}
-                {symbolRows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-2">
-                    {/* Botón ABC en la fila 3 (izquierda) */}
-                    {rowIndex === 2 && (
-                      <button
-                        onMouseDown={(e) => e.preventDefault()}
-                        onPointerUp={() => setPage('letters')}
-                        className={cn(keyAction, 'text-sm')}
-                      >
-                        ABC
-                      </button>
-                    )}
-
-                    {row.map((key) => (
-                      <button
-                        key={key}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onPointerUp={() => handleKey(key)}
-                        className={keyRegular}
-                      >
-                        {key}
-                      </button>
-                    ))}
-
-                    {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
-                    {rowIndex === 2 && (
-                      <button
-                        {...deleteProps}
-                        className={keyAction}
-                        aria-label="Borrar"
-                      >
-                        <Delete className="w-6 h-6" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {/* Fila inferior: . , + espacio + enter */}
-                <div className="flex gap-2 items-center">
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => setPage('letters')}
-                    className={cn(keyAction, 'text-sm')}
-                  >
-                    ABC
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey('.')}
-                    className={keySpecial}
-                  >
-                    .
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey(',')}
-                    className={keySpecial}
-                  >
-                    ,
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => handleKey('SPACE')}
-                    className={cn(
-                      keyBase,
-                      'flex-1 h-14 text-base text-gray-500',
-                      'bg-white border-gray-200 hover:bg-blue-50',
-                      'shadow-sm',
-                    )}
-                  >
-                    espacio
-                  </button>
-
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onPointerUp={() => { handleKey('ENTER'); onClose(); }}
-                    className={keyBlue}
-                    aria-label="Enter"
-                  >
-                    <CornerDownLeft className="w-6 h-6" />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          /* ─── MODO NUMÉRICO ─── */
-          <div className="max-w-[320px] mx-auto space-y-3">
-            {numericKeys.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex justify-center gap-3">
-                {row.map((key) =>
-                  key === 'DEL' ? (
-                    <button
-                      key={key}
-                      {...deleteProps}
-                      className={cn(
-                        keyBase,
-                        'flex-1 h-[72px] text-2xl',
-                        'bg-gray-200 border-gray-300 text-gray-600 hover:bg-gray-300',
+        <div className="px-4 pb-5">
+          {/* ─── MODO ALPHA ─── */}
+          {mode === "alpha" ? (
+            <div className="space-y-2.5">
+              {page === "letters" ? (
+                <>
+                  {/* Filas de letras */}
+                  {alphaRows.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex gap-2">
+                      {/* Botón Shift en la fila 3 (izquierda) */}
+                      {rowIndex === 2 && (
+                        <button
+                          onMouseDown={(e) => e.preventDefault()}
+                          onPointerUp={handleShiftTap}
+                          className={keyShift}
+                          aria-label="Shift"
+                          title={
+                            shiftState === "lock"
+                              ? "Bloq Mayús activado"
+                              : shiftState === "once"
+                                ? "Una mayúscula"
+                                : "Minúsculas"
+                          }
+                        >
+                          <ArrowBigUp className="w-6 h-6" />
+                          {shiftState === "lock" && (
+                            <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                        </button>
                       )}
-                      aria-label="Borrar"
-                    >
-                      <Delete className="w-6 h-6 mx-auto" />
-                    </button>
-                  ) : (
+
+                      {row.map((key) => (
+                        <button
+                          key={key}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onPointerUp={() => handleKey(key)}
+                          className={keyRegular}
+                        >
+                          {key}
+                        </button>
+                      ))}
+
+                      {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
+                      {rowIndex === 2 && (
+                        <button
+                          {...deleteProps}
+                          className={keyDelete}
+                          aria-label="Borrar"
+                        >
+                          <Delete className="w-6 h-6" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Fila inferior: 123 + espacio + enter */}
+                  <div className="flex gap-2 items-center">
                     <button
-                      key={key}
                       onMouseDown={(e) => e.preventDefault()}
-                      onPointerUp={() => handleKey(key)}
+                      onPointerUp={() => setPage("symbols")}
+                      className={cn(keyAction, "text-sm")}
+                    >
+                      123
+                    </button>
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => handleKey("SPACE")}
                       className={cn(
                         keyBase,
-                        'flex-1 h-[72px] text-2xl',
-                        'bg-white border-gray-200 text-gray-800 hover:bg-blue-50 hover:border-blue-300 shadow-sm',
+                        "flex-1 h-14 text-base text-gray-500",
+                        "bg-white border-gray-200 hover:bg-blue-50",
+                        "shadow-sm",
                       )}
-                      aria-label={key}
                     >
-                      {key}
+                      espacio
                     </button>
-                  )
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {/* closes outer keyboard container */}
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => {
+                        handleKey("ENTER");
+                        onClose();
+                      }}
+                      className={keyBlue}
+                      aria-label="Enter"
+                    >
+                      <CornerDownLeft className="w-6 h-6" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* ─── Página de símbolos/números ─── */}
+                  {symbolRows.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex gap-2">
+                      {/* Botón ABC en la fila 3 (izquierda) */}
+                      {rowIndex === 2 && (
+                        <button
+                          onMouseDown={(e) => e.preventDefault()}
+                          onPointerUp={() => setPage("letters")}
+                          className={cn(keyAction, "text-sm")}
+                        >
+                          ABC
+                        </button>
+                      )}
+
+                      {row.map((key) => (
+                        <button
+                          key={key}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onPointerUp={() => handleKey(key)}
+                          className={keyRegular}
+                        >
+                          {key}
+                        </button>
+                      ))}
+
+                      {/* Borrar en la fila 3 (derecha) — long-press = borrar todo */}
+                      {rowIndex === 2 && (
+                        <button
+                          {...deleteProps}
+                          className={keyDelete}
+                          aria-label="Borrar"
+                        >
+                          <Delete className="w-6 h-6" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Fila inferior: . , + espacio + enter */}
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => setPage("letters")}
+                      className={cn(keyAction, "text-sm")}
+                    >
+                      ABC
+                    </button>
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => handleKey(".")}
+                      className={keySpecial}
+                    >
+                      .
+                    </button>
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => handleKey(",")}
+                      className={keySpecial}
+                    >
+                      ,
+                    </button>
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => handleKey("SPACE")}
+                      className={cn(
+                        keyBase,
+                        "flex-1 h-14 text-base text-gray-500",
+                        "bg-white border-gray-200 hover:bg-blue-50",
+                        "shadow-sm",
+                      )}
+                    >
+                      espacio
+                    </button>
+
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onPointerUp={() => {
+                        handleKey("ENTER");
+                        onClose();
+                      }}
+                      className={keyBlue}
+                      aria-label="Enter"
+                    >
+                      <CornerDownLeft className="w-6 h-6" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            /* ─── MODO NUMÉRICO ─── */
+            <div className="max-w-[320px] mx-auto space-y-3">
+              {numericKeys.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex justify-center gap-3">
+                  {row.map((key) =>
+                    key === "DEL" ? (
+                      <button
+                        key={key}
+                        {...deleteProps}
+                        className={cn(
+                          keyBase,
+                          "flex-1 h-[72px] text-2xl",
+                          "bg-gray-200 border-gray-300 text-gray-600 hover:bg-gray-300",
+                        )}
+                        aria-label="Borrar"
+                      >
+                        <Delete className="w-6 h-6 mx-auto" />
+                      </button>
+                    ) : (
+                      <button
+                        key={key}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onPointerUp={() => handleKey(key)}
+                        className={cn(
+                          keyBase,
+                          "flex-1 h-[72px] text-2xl",
+                          "bg-white border-gray-200 text-gray-800 hover:bg-blue-50 hover:border-blue-300 shadow-sm",
+                        )}
+                        aria-label={key}
+                      >
+                        {key}
+                      </button>
+                    ),
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* closes outer keyboard container */}
       </div>
     </React.Fragment>
   );

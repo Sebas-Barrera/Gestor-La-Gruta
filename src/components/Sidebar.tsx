@@ -7,7 +7,9 @@ import {
   ClipboardList,
   Bell,
   Settings,
-  LogOut
+  LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types/auth';
@@ -30,10 +32,6 @@ const adminNavItems: NavItem[] = [
   { icon: Settings, label: 'Configuración', id: 'settings' },
 ];
 
-const workerNavItems: NavItem[] = [
-  { icon: Package, label: 'Inventario', id: 'inventory' },
-];
-
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
@@ -43,46 +41,32 @@ interface SidebarProps {
 
 export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  const navItems = role === 'worker' ? workerNavItems : adminNavItems;
-
-  const bottomItems: NavItem[] = [
-    { icon: LogOut, label: 'Cerrar Sesión', id: 'logout' },
-  ];
-
-  // When pinned manually (via Logo in Electron), sidebar stays open.
-  const [isPinned, setIsPinned] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
 
-  // Manejador del Click Outside: si el sidebar está pineado y el clic fue fuera, lo cerramos.
-  useEffect(() => {
-    if (!isPinned) return;
+  const navItems = role === 'admin' ? adminNavItems : [];
 
-    const handleClickOutside = (e: MouseEvent) => {
+  // Cerrar sidebar al tocar fuera
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handleOutsideTouch = (e: MouseEvent | TouchEvent) => {
       if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        setIsPinned(false);
-        setIsExpanded(false); // Por precaución retraemos todo estado visual
+        setIsExpanded(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isPinned]);
+    document.addEventListener('mousedown', handleOutsideTouch);
+    document.addEventListener('touchstart', handleOutsideTouch);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideTouch);
+      document.removeEventListener('touchstart', handleOutsideTouch);
+    };
+  }, [isExpanded]);
 
-  const handleLogoClick = () => {
-    // Validar si estamos en el entorno compilado de Electron
-    const isElectron = typeof window !== 'undefined' && 
-      (window.electronAPI !== undefined || /electron/i.test(navigator.userAgent));
-    
-    // Solo permitimos el anclaje manual temporal al dar clic en el logo en Electron
-    if (isElectron) {
-      setIsPinned((prev) => !prev);
-    }
-  };
+  const toggleSidebar = () => setIsExpanded(prev => !prev);
 
   const handleSectionClick = (section: string) => {
     setIsExpanded(false);
-    setIsPinned(false);
     onSectionChange(section);
   };
 
@@ -92,34 +76,31 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
       className={cn(
         'fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-50',
         'flex flex-col transition-[width] duration-300 ease-out overflow-hidden',
-        isExpanded || isPinned ? 'w-60' : 'w-[72px]'
+        isExpanded ? 'w-60' : 'w-[72px]'
       )}
-      onMouseEnter={() => { if (!isPinned) setIsExpanded(true); }}
-      onMouseLeave={() => { if (!isPinned) setIsExpanded(false); }}
     >
-      {/* Logo */}
-      <div 
-        className={cn(
-          "h-16 flex items-center justify-center border-b border-gray-100 px-3 select-none",
-          // Solo si estamos en electron parecerá cliqueable (cursor-pointer).
-          // De forma nativa window.electronAPI sirve de check seguro.
-          typeof window !== 'undefined' && (window.electronAPI || /electron/i.test(navigator.userAgent)) && "cursor-pointer"
-        )}
-        onClick={handleLogoClick}
-      >
+      {/* Header: Logo + Hamburguesa */}
+      <div className="h-16 flex items-center border-b border-gray-100 px-3 gap-2">
+        <button
+          onClick={toggleSidebar}
+          className="w-11 h-11 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors shrink-0"
+        >
+          {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
         <img
           src={lagrutaLogo}
           alt="La Gruta"
           className={cn(
-            'object-contain transition-all duration-300 ease-out',
-            isExpanded || isPinned ? 'h-10' : 'h-8'
+            'object-contain h-8 transition-opacity duration-300',
+            isExpanded ? 'opacity-100' : 'opacity-0'
           )}
         />
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1">
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
 
@@ -131,34 +112,29 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
                 'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
                 'transition-colors duration-200 ease-out group relative',
                 isActive
-                  ? 'bg-blue-50 text-blue-600 border-l-3 border-blue-500'
-                  : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-500 active:bg-gray-100 active:text-blue-600'
               )}
-              style={{
-                animationDelay: `${index * 100}ms`,
-              }}
             >
               <Icon
                 className={cn(
                   'w-5 h-5 shrink-0 transition-transform duration-200',
-                  'group-hover:scale-110',
                   isActive && 'scale-110'
                 )}
               />
 
               <span className={cn(
                 'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
-                isExpanded || isPinned ? 'opacity-100' : 'opacity-0'
+                isExpanded ? 'opacity-100' : 'opacity-0'
               )}>
                 {item.label}
               </span>
 
               {item.badge && (
                 <span className={cn(
-                  'absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs',
+                  'absolute top-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs',
                   'flex items-center justify-center font-medium',
-                  'animate-in zoom-in duration-200',
-                  !isExpanded && !isPinned && 'right-1'
+                  isExpanded ? 'right-2' : 'right-1'
                 )}>
                   {item.badge}
                 </span>
@@ -172,41 +148,27 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
         })}
       </nav>
 
-      {/* Espacio invisible (ya no reacciona al clic como "lock") */}
-      <div
-        className="min-h-[48px] flex-shrink-0"
-      />
-
-      {/* Bottom Actions */}
+      {/* Bottom: Logout */}
       <div className="py-4 px-3 space-y-1 border-t border-gray-100">
-        {bottomItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.id === 'logout') {
-                  setIsExpanded(false);
-                  setIsPinned(false);
-                  if (onLogout) onLogout();
-                }
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
-                'text-gray-500 hover:text-blue-600 hover:bg-gray-50',
-                'transition-colors duration-200 ease-out group'
-              )}
-            >
-              <Icon className="w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span className={cn(
-                'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
-                isExpanded || isPinned ? 'opacity-100' : 'opacity-0'
-              )}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+        <button
+          onClick={() => {
+            setIsExpanded(false);
+            if (onLogout) onLogout();
+          }}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
+            'text-gray-500 active:bg-gray-100 active:text-blue-600',
+            'transition-colors duration-200 ease-out group'
+          )}
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          <span className={cn(
+            'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
+            isExpanded ? 'opacity-100' : 'opacity-0'
+          )}>
+            Cerrar Sesión
+          </span>
+        </button>
       </div>
     </aside>
   );

@@ -8,7 +8,7 @@ import { Toaster } from '@/components/ui/sonner';
 const sectionMap: Record<string, string> = {
   dashboard: 'Dashboard',
   inventory: 'Inventario',
-  bars: 'Bares',
+  bars: 'Almacenes',
   reports: 'Reportes',
   history: 'Historial',
   alerts: 'Alertas',

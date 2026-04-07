@@ -116,7 +116,7 @@ export function DashboardSection() {
             )}
           >
             <Store className="w-4 h-4" />
-            <span className="text-sm font-medium">Todos los Bares</span>
+            <span className="text-sm font-medium">Todos los Almacenes</span>
           </button>
 
           {barStats.map(bar => (
@@ -154,7 +154,7 @@ export function DashboardSection() {
           iconBgColor="bg-blue-100"
           iconColor="text-blue-600"
           value={dashboardStats.totalProducts}
-          label={selectedBarId === 'all' ? 'Total Productos' : 'Productos en Bar'}
+          label={selectedBarId === 'all' ? 'Total Productos' : 'Productos en Almacén'}
           change={dashboardStats.totalProductsChange}
           changeLabel="vs mes pasado"
           delay={0}

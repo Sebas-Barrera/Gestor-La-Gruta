@@ -96,7 +96,7 @@ export function AlertsSection() {
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Alertas Activas</h3>
           <span className="text-sm text-gray-500">
-            {activeBarId === 'all' ? 'Todos los bares' : bars.find(b => b.id === activeBarId)?.name}
+            {activeBarId === 'all' ? 'Todos los almacenes' : bars.find(b => b.id === activeBarId)?.name}
           </span>
         </div>
 
@@ -185,7 +185,7 @@ export function AlertsSection() {
             <p className="text-sm text-gray-500">
               {activeBarId === 'all'
                 ? 'Todos los productos tienen stock suficiente'
-                : 'Este bar tiene stock suficiente en todos sus productos'}
+                : 'Este almacén tiene stock suficiente en todos sus productos'}
             </p>
           </div>
         )}

@@ -52,13 +52,13 @@ export function BarsSection() {
   const handleSaveBar = async (data: Omit<Bar, 'id'>) => {
     if (editingBar) {
       await updateBar(editingBar.id, data);
-      toast.success(`Bar "${data.name}" actualizado`, {
+      toast.success(`Almacén "${data.name}" actualizado`, {
         description: 'Los cambios han sido guardados',
       });
     } else {
       const newBar = await addBar(data);
       setSelectedBarId(newBar.id);
-      toast.success(`Bar "${data.name}" creado`, {
+      toast.success(`Almacén "${data.name}" creado`, {
         description: `Ubicación: ${data.location}`,
       });
     }
@@ -80,8 +80,8 @@ export function BarsSection() {
     if (selectedBarId === deleteTarget.id) {
       setSelectedBarId(bars.find(b => b.id !== deleteTarget.id)?.id ?? '');
     }
-    toast.success(`Bar "${deletedName}" eliminado`, {
-      description: 'El bar fue eliminado correctamente',
+    toast.success(`Almacén "${deletedName}" eliminado`, {
+      description: 'El almacén fue eliminado correctamente',
     });
   };
 
@@ -90,7 +90,7 @@ export function BarsSection() {
   const handleAddWorker = async (data: Omit<Worker, 'id' | 'createdAt'>) => {
     await addWorker(data);
     toast.success(`Trabajador "${data.name}" agregado`, {
-      description: `Asignado a ${data.barIds.length} bar(es)`,
+      description: `Asignado a ${data.barIds.length} almacén(es)`,
     });
   };
 
@@ -115,13 +115,13 @@ export function BarsSection() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Gestión de Bares</h2>
+        <h2 className="text-xl font-bold text-gray-900">Gestión de Almacenes</h2>
         <Button
           onClick={() => { setEditingBar(undefined); setBarFormOpen(true); }}
           className="gap-2 bg-blue-500 hover:bg-blue-600"
         >
           <Plus className="w-4 h-4" />
-          Agregar Bar
+          Agregar Almacén
         </Button>
       </div>
 
@@ -310,7 +310,7 @@ export function BarsSection() {
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteBar}
-        title="Eliminar Bar"
+        title="Eliminar Almacén"
         description={`¿Estás seguro de eliminar "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
       />
     </div>

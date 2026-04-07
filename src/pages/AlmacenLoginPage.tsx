@@ -67,7 +67,7 @@ export function AlmacenLoginPage() {
               Hola, {pendingWorker.name.split(' ')[0]}
             </h1>
             <p className="text-sm text-gray-500 text-center mb-6">
-              Selecciona el bar al que deseas ingresar
+              Selecciona el almacén al que deseas ingresar
             </p>
 
             {/* Cards de bares */}

@@ -157,7 +157,7 @@ export function WorkerInventorySection() {
       requestPin(isAddingProduct ? "scale_entry" : "scale_out");
     },
     onNoWeightProducts: () => {
-      toast.warning("No hay productos de báscula en este bar", {
+      toast.warning("No hay productos de báscula en este almacén", {
         description: "Los productos a granel deben ser registrados por el administrador.",
       });
     },

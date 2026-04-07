@@ -63,7 +63,7 @@ export function BarPersonalTab({ barId, bars, workers, onAddWorker, onUpdateWork
     },
     {
       key: 'bars',
-      header: 'Bares Asignados',
+      header: 'Almacenes Asignados',
       render: (w) => (
         <div className="flex flex-wrap gap-1">
           {w.barIds.map(bid => {
@@ -122,7 +122,7 @@ export function BarPersonalTab({ barId, bars, workers, onAddWorker, onUpdateWork
         </Button>
       </div>
 
-      <DataTable columns={columns} data={barWorkers} emptyMessage="No hay personal asignado a este bar" />
+      <DataTable columns={columns} data={barWorkers} emptyMessage="No hay personal asignado a este almacén" />
 
       <WorkerFormModal
         open={formOpen}

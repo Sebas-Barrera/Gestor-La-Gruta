@@ -138,7 +138,7 @@ export function ReportsSection() {
             )}
           >
             <Store className="w-4 h-4" />
-            <span className="text-sm font-medium">Todos los Bares</span>
+            <span className="text-sm font-medium">Todos los Almacenes</span>
           </button>
 
           {bars.map(bar => (

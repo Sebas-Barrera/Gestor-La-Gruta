@@ -8,7 +8,7 @@ interface BarSelectorProps {
   activeBarId: string;
   onBarChange: (barId: string) => void;
   delay?: number;
-  /** Acciones extra que se renderizan al lado derecho del título "Seleccionar Bar" */
+  /** Acciones extra que se renderizan al lado derecho del título "Seleccionar Almacén" */
   actions?: React.ReactNode;
   /** Mostrar botón "Todos" al inicio (activeBarId='all'). Default: false */
   showAllOption?: boolean;
@@ -32,7 +32,7 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0, actions
       style={{ transitionDelay: `${delay}ms` }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-700">Seleccionar Bar</h3>
+        <h3 className="text-sm font-semibold text-gray-700">Seleccionar Almacén</h3>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
       
@@ -63,7 +63,7 @@ export function BarSelector({ bars, activeBarId, onBarChange, delay = 0, actions
                 'text-sm font-semibold transition-colors duration-300',
                 activeBarId === 'all' ? 'text-blue-700' : 'text-gray-900'
               )}>Todos</p>
-              <p className="text-xs text-gray-500">Todos los bares</p>
+              <p className="text-xs text-gray-500">Todos los almacenes</p>
             </div>
             {activeBarId === 'all' && (
               <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-in zoom-in duration-200">

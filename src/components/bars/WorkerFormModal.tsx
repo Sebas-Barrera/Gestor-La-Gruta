@@ -117,7 +117,7 @@ export function WorkerFormModal({ open, onClose, onSave, worker, bars, currentBa
             <TouchInput value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="555-0000" keyboardMode="numeric" />
           </FormField>
 
-          <FormField label="Asignar a Bares" required error={errors.bars}>
+          <FormField label="Asignar a Almacenes" required error={errors.bars}>
             <div className="grid grid-cols-2 gap-2">
               {bars.map((bar) => (
                 <button

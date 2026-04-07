@@ -23,7 +23,7 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   { icon: Home, label: 'Dashboard', id: 'dashboard' },
   { icon: Package, label: 'Inventario', id: 'inventory' },
-  { icon: Store, label: 'Bares', id: 'bars' },
+  { icon: Store, label: 'Almacenes', id: 'bars' },
   { icon: BarChart3, label: 'Reportes', id: 'reports' },
   { icon: ClipboardList, label: 'Historial', id: 'history' },
   { icon: Bell, label: 'Alertas', id: 'alerts', badge: 3 },

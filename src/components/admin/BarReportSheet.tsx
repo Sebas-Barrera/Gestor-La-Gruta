@@ -74,7 +74,7 @@ export function BarReportSheet({
             </div>
           </SheetTitle>
           <SheetDescription>
-            Resumen del inventario actual del bar
+            Resumen del inventario actual del almacén
           </SheetDescription>
         </SheetHeader>
 
@@ -115,7 +115,7 @@ export function BarReportSheet({
             <div className="space-y-2">
               {products.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">
-                  No hay productos en este bar
+                  No hay productos en este almacén
                 </p>
               ) : (
                 products.map(product => {

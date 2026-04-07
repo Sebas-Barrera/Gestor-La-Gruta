@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         b => worker.barIds.includes(b.id) && b.isActive,
       );
       if (workerBars.length === 0) {
-        return { success: false, error: 'No tienes bares asignados activos' };
+        return { success: false, error: 'No tienes almacenes asignados activos' };
       }
 
       if (workerBars.length === 1) {

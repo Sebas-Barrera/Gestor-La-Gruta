@@ -35,7 +35,7 @@ export function BarPerformanceChart({ bars, onViewReport, delay = 0 }: BarPerfor
       <div className="px-5 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Rendimiento por Bar</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Rendimiento por Almacén</h3>
             <p className="text-sm text-gray-500">Comparación de salidas e inventario</p>
           </div>
           <div className="flex items-center gap-2">

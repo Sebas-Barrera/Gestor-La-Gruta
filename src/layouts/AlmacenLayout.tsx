@@ -23,18 +23,21 @@ export function AlmacenLayout() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header con logo, nombre del almacén y cerrar sesión */}
       <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-40">
-        {/* Logo */}
-        <img src={lagrutaLogo} alt="La Gruta" className="h-9 object-contain" />
-
-        {/* Nombre del almacén */}
-        {currentBar && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-              <Store className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-gray-900">{currentBar.name}</span>
-          </div>
-        )}
+        {/* Logo + Nombre del almacén */}
+        <div className="flex items-center gap-4">
+          <img src={lagrutaLogo} alt="La Gruta" className="h-9 object-contain" />
+          {currentBar && (
+            <>
+              <div className="w-px h-8 bg-gray-200" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <Store className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-900">{currentBar.name}</span>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Cerrar sesión */}
         <button

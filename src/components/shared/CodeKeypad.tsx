@@ -1,4 +1,4 @@
-import { Delete, Check, X } from 'lucide-react';
+import { Delete, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Longitud por defecto del código */
@@ -121,16 +121,11 @@ export function CodeKeypad({
 
         <button
           type="button"
-          onClick={isComplete ? onSubmit : handleBackspace}
-          disabled={disabled}
-          className={cn(
-            'pin-key h-14 rounded-xl border flex items-center justify-center active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none',
-            isComplete
-              ? 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-          )}
+          onClick={handleBackspace}
+          disabled={disabled || isComplete}
+          className="pin-key h-14 rounded-xl border flex items-center justify-center active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
         >
-          {isComplete ? <Check className="w-5 h-5" /> : <Delete className="w-5 h-5" />}
+          <Delete className="w-5 h-5" />
         </button>
       </div>
     </div>

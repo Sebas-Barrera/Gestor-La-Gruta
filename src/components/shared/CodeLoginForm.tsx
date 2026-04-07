@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { CodeKeypad } from '@/components/shared/CodeKeypad';
@@ -49,6 +49,13 @@ export function CodeLoginForm({ title, subtitle, icon, onSubmit, altLinkText, al
     setCode(value);
     if (error) setError('');
   }, [error]);
+
+  // Auto-submit cuando el código alcanza 4 dígitos
+  useEffect(() => {
+    if (code.length === 4) {
+      handleSubmit();
+    }
+  }, [code, handleSubmit]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

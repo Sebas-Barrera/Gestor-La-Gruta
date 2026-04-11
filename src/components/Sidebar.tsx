@@ -76,30 +76,30 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
       className={cn(
         'fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-50',
         'flex flex-col transition-[width] duration-300 ease-out overflow-hidden',
-        isExpanded ? 'w-60' : 'w-[72px]'
+        isExpanded ? 'w-72' : 'w-[96px]'
       )}
     >
       {/* Header: Logo + Hamburguesa */}
-      <div className="h-16 flex items-center border-b border-gray-100 px-3 gap-2">
+      <div className="h-20 flex items-center border-b border-gray-100 px-4 gap-3">
         <button
           onClick={toggleSidebar}
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors shrink-0"
+          className="w-14 h-14 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors shrink-0"
         >
-          {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isExpanded ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
         </button>
 
         <img
           src={lagrutaLogo}
           alt="La Gruta"
           className={cn(
-            'object-contain h-8 transition-opacity duration-300',
+            'object-contain h-10 transition-opacity duration-300',
             isExpanded ? 'opacity-100' : 'opacity-0'
           )}
         />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1">
+      <nav className="flex-1 py-4 px-4 space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -109,7 +109,7 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
               key={item.id}
               onClick={() => handleSectionClick(item.id)}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
+                'w-full flex items-center gap-4 px-4 py-4 rounded-xl overflow-hidden',
                 'transition-colors duration-200 ease-out group relative',
                 isActive
                   ? 'bg-blue-50 text-blue-600'
@@ -118,13 +118,13 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
             >
               <Icon
                 className={cn(
-                  'w-5 h-5 shrink-0 transition-transform duration-200',
+                  'w-7 h-7 shrink-0 transition-transform duration-200',
                   isActive && 'scale-110'
                 )}
               />
 
               <span className={cn(
-                'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
+                'text-lg font-medium whitespace-nowrap transition-opacity duration-200',
                 isExpanded ? 'opacity-100' : 'opacity-0'
               )}>
                 {item.label}
@@ -132,16 +132,16 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
 
               {item.badge && (
                 <span className={cn(
-                  'absolute top-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs',
-                  'flex items-center justify-center font-medium',
-                  isExpanded ? 'right-2' : 'right-1'
+                  'absolute top-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs',
+                  'flex items-center justify-center font-semibold',
+                  isExpanded ? 'right-3' : 'right-2'
                 )}>
                   {item.badge}
                 </span>
               )}
 
               {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-500 rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r-full" />
               )}
             </button>
           );
@@ -149,21 +149,21 @@ export function Sidebar({ activeSection, onSectionChange, role = 'admin', onLogo
       </nav>
 
       {/* Bottom: Logout */}
-      <div className="py-4 px-3 space-y-1 border-t border-gray-100">
+      <div className="py-4 px-4 space-y-1 border-t border-gray-100">
         <button
           onClick={() => {
             setIsExpanded(false);
             if (onLogout) onLogout();
           }}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-3 rounded-xl overflow-hidden',
+            'w-full flex items-center gap-4 px-4 py-4 rounded-xl overflow-hidden',
             'text-gray-500 active:bg-gray-100 active:text-blue-600',
             'transition-colors duration-200 ease-out group'
           )}
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          <LogOut className="w-7 h-7 shrink-0" />
           <span className={cn(
-            'text-sm font-medium whitespace-nowrap transition-opacity duration-200',
+            'text-lg font-medium whitespace-nowrap transition-opacity duration-200',
             isExpanded ? 'opacity-100' : 'opacity-0'
           )}>
             Cerrar Sesión

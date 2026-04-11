@@ -53,7 +53,7 @@ export function AdminLayout() {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 ml-[72px] min-h-screen">
+      <main className="flex-1 ml-[96px] min-h-screen">
         <Header
           breadcrumbs={getBreadcrumbs()}
           userRole="admin"

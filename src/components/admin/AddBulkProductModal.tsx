@@ -152,7 +152,6 @@ export function AddBulkProductModal({
     if (!form.subcategory.trim())
       errs.subcategory = "La subcategoría es obligatoria";
     if (!form.supplier.trim()) errs.supplier = "El proveedor es obligatorio";
-    if (form.price <= 0) errs.price = "El precio debe ser mayor a 0";
     if (form.minStock < 0)
       errs.minStock = "El stock mínimo no puede ser negativo";
     if (form.maxStock <= 0)
@@ -314,7 +313,7 @@ export function AddBulkProductModal({
 
           {/* Precio + Unidad de peso */}
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Precio ($)" required error={errors.price}>
+            <FormField label="Precio ($)" error={errors.price}>
               <TouchInput
                 type="number"
                 value={form.price || ""}

@@ -46,8 +46,8 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <DialogTitle className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
               <Package className="w-5 h-5 text-blue-600" />
@@ -56,7 +56,7 @@ export function StockAdjustmentModal({ open, onClose, product, onSave, workerNam
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 pt-2">
+        <div className="space-y-6 px-6 pt-2 pb-6 overflow-y-auto flex-1">
           {/* Product info */}
           <div className="p-3 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-900">{product.name}</p>

@@ -79,8 +79,8 @@ export function AdminFormModal({ open, onClose, onSave, admin }: AdminFormModalP
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <DialogTitle className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-blue-600" />
@@ -89,7 +89,7 @@ export function AdminFormModal({ open, onClose, onSave, admin }: AdminFormModalP
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4 px-6 pt-2 pb-6 overflow-y-auto flex-1">
           <FormField label="Nombre completo" required error={errors.name}>
             <TouchInput
               value={name}

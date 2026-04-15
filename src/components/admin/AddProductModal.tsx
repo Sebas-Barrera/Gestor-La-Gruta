@@ -200,7 +200,6 @@ export function AddProductModal({
     if (!form.subcategory.trim())
       errs.subcategory = "La subcategoría es obligatoria";
     if (!form.supplier.trim()) errs.supplier = "El proveedor es obligatorio";
-    if (form.price <= 0) errs.price = "El precio debe ser mayor a 0";
     if (form.minStock < 0)
       errs.minStock = "El stock mínimo no puede ser negativo";
     if (form.maxStock <= 0)
@@ -383,14 +382,14 @@ export function AddProductModal({
 
           {/* Precio + Unidad */}
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Precio ($)" required error={errors.price}>
+            <FormField label="Precio ($)" error={errors.price}>
               <TouchInput
                 type="number"
                 value={form.price || ""}
                 onChange={(e) => updateField("price", Number(e.target.value))}
                 placeholder="0.00"
                 className="min-h-[44px]"
-              />
+                />
             </FormField>
             <FormField label="Unidad" required error={errors.unit}>
               <TouchInput
@@ -398,7 +397,7 @@ export function AddProductModal({
                 onChange={(e) => updateField("unit", e.target.value)}
                 placeholder="Ej: botella, lata, kg"
                 className="min-h-[44px]"
-              />
+                />
             </FormField>
           </div>
 
@@ -411,7 +410,7 @@ export function AddProductModal({
                 onChange={(e) => updateField("stock", Number(e.target.value))}
                 placeholder="0"
                 className="min-h-[44px]"
-              />
+                />
             </FormField>
             <FormField label="Stock Mín." required error={errors.minStock}>
               <TouchInput
@@ -422,7 +421,7 @@ export function AddProductModal({
                 }
                 placeholder="10"
                 className="min-h-[44px]"
-              />
+                />
             </FormField>
             <FormField label="Stock Máx." required error={errors.maxStock}>
               <TouchInput
@@ -433,7 +432,7 @@ export function AddProductModal({
                 }
                 placeholder="100"
                 className="min-h-[44px]"
-              />
+                />
             </FormField>
           </div>
 
@@ -499,7 +498,7 @@ export function AddProductModal({
                     onChange={(e) => updateField("quantityPerBox", Number(e.target.value))}
                     placeholder="24"
                     className="min-h-[44px] bg-white"
-                  />
+                        />
                 </FormField>
                 <FormField label="Código de pieza suelta" required error={errors.individualBarcode}>
                   <TouchInput
@@ -507,7 +506,7 @@ export function AddProductModal({
                     onChange={(e) => updateField("individualBarcode", cleanBarcode(e.target.value))}
                     placeholder="Ej: 75010..."
                     className="min-h-[44px] bg-white"
-                  />
+                        />
                 </FormField>
               </div>
 

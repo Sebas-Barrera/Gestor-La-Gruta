@@ -54,11 +54,12 @@ interface KeyboardContextValue {
   mode: KeyboardMode;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Busca el ancestro scrollable más cercano del elemento dado.
- * Útil para agregar padding y hacer scroll cuando el teclado cubre un input.
+ * Encuentra el ancestro scrollable más cercano de `el`. Si no hay ninguno
+ * en el árbol (común para inputs en páginas cuyo scroll vive en `window`),
+ * devuelve `null` y el caller debe usar `window` como fallback.
  */
 function findScrollableAncestor(el: HTMLElement): HTMLElement | null {
   let parent = el.parentElement;
@@ -110,10 +111,81 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
    */
   const keyboardContainerRef = useRef<HTMLDivElement | null>(null);
 
-  /** Ref al contenedor scrollable que recibió padding extra por el teclado */
-  const scrollableRef = useRef<HTMLElement | null>(null);
-  /** Padding original del contenedor scrollable, para restaurarlo al cerrar */
-  const originalPaddingRef = useRef<string>('');
+  /**
+   * Estado del lift aplicado al DialogContent activo.
+   * - `el`: el modal box que estamos levantando
+   * - `lift`: cantidad ACUMULADA de pixels que ya levantamos (>0 = subido)
+   * - `originalTransform` / `originalTransition`: para restaurar al cerrar
+   *
+   * Estrategia de lift: en vez de redimensionar el modal o scrollear su
+   * contenido (ambos enfoques sufren de problemas de timing/clamping),
+   * traducimos directamente el modal hacia arriba con `transform`. Esto
+   * es bulletproof — el navegador no tiene forma de "deshacer" la traducción.
+   * Si el modal queda más alto que el viewport, su tope se sale por arriba,
+   * pero el input enfocado siempre queda arriba del teclado, que es lo que
+   * importa.
+   */
+  const dialogLiftRef = useRef<{
+    el: HTMLElement;
+    lift: number;
+    originalTransform: string;
+    originalTransition: string;
+  } | null>(null);
+
+  /**
+   * Timer pendiente del openKeyboard activo.
+   * Evita que llamadas duplicadas (onFocus + onClick disparan ambos en TouchInput)
+   * agenden dos pases de medición.
+   */
+  const pendingTimerRef = useRef<number | null>(null);
+
+  /**
+   * Estado del lift aplicado a un wrapper de página (no-modal).
+   * Se usa cuando el input no está dentro de ningún Dialog/Sheet — para
+   * páginas normales con poco contenido (ej. inventario vacío), donde el
+   * scroll natural no alcanza para sacar el input de detrás del teclado.
+   *
+   * Liftamos `#root` (la raíz de React) y el teclado, que vive en un portal
+   * a `document.body` FUERA de #root, no se mueve.
+   */
+  const pageLiftRef = useRef<{
+    el: HTMLElement;
+    lift: number;
+    originalTransform: string;
+    originalTransition: string;
+  } | null>(null);
+
+  /** Restaura el DialogContent a su transform/transition original. */
+  const restoreDialogLift = useCallback(() => {
+    const state = dialogLiftRef.current;
+    if (!state) return;
+    // Mantener la transición durante el regreso animado.
+    state.el.style.transform = state.originalTransform;
+    const el = state.el;
+    const originalTransition = state.originalTransition;
+    window.setTimeout(() => {
+      // Solo limpiar transition si nadie reasignó el modal en el ínterin.
+      if (dialogLiftRef.current?.el !== el) {
+        el.style.transition = originalTransition;
+      }
+    }, 360);
+    dialogLiftRef.current = null;
+  }, []);
+
+  /** Restaura el wrapper de página a su transform original. */
+  const restorePageLift = useCallback(() => {
+    const state = pageLiftRef.current;
+    if (!state) return;
+    state.el.style.transform = state.originalTransform;
+    const el = state.el;
+    const originalTransition = state.originalTransition;
+    window.setTimeout(() => {
+      if (pageLiftRef.current?.el !== el) {
+        el.style.transition = originalTransition;
+      }
+    }, 360);
+    pageLiftRef.current = null;
+  }, []);
 
   /**
    * Abre el teclado y lo enlaza con el input/textarea especificado.
@@ -126,52 +198,151 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
       ref: RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
       keyboardMode: KeyboardMode = 'alpha',
     ) => {
+      const isSameInput = activeInputRef.current === ref;
+
       activeInputRef.current = ref;
       setMode(keyboardMode);
       setIsOpen(true);
       setInputEmpty(!ref.current?.value);
 
+      // Dedup: si ya hay un pase pendiente para el mismo input (onFocus+onClick
+      // disparan ambos), ignorar la segunda llamada.
+      if (isSameInput && pendingTimerRef.current !== null) return;
+
+      // Si veníamos de otro input, cancelar su pase pendiente.
+      if (pendingTimerRef.current !== null) {
+        clearTimeout(pendingTimerRef.current);
+        pendingTimerRef.current = null;
+      }
+
       // Delay para ejecutarse DESPUÉS de que:
       // 1. Radix Dialog termine su manejo de foco (FocusScope/focus trap)
       // 2. La animación del teclado se complete (duration-300)
-      setTimeout(() => {
+      pendingTimerRef.current = window.setTimeout(() => {
+        pendingTimerRef.current = null;
         const inputEl = ref.current;
         if (!inputEl) return;
 
         inputEl.focus({ preventScroll: true });
 
-        // Agregar padding al contenedor scrollable para crear espacio sobre el teclado
         const keyboardEl = keyboardContainerRef.current;
         if (!keyboardEl) return;
 
-        const keyboardHeight = keyboardEl.offsetHeight;
-        const scrollable = findScrollableAncestor(inputEl);
+        const keyboardTop = keyboardEl.getBoundingClientRect().top;
+        const margin = 16;
+        const desiredBottom = keyboardTop - margin;
 
-        if (scrollable && scrollableRef.current !== scrollable) {
-          // Restaurar padding del contenedor anterior si cambió
-          if (scrollableRef.current) {
-            scrollableRef.current.style.paddingBottom = originalPaddingRef.current;
+        // Buscar el DialogContent ancestro (modal box). Si no existe, este input
+        // vive en una página normal y resolvemos con scroll de la página.
+        const dc = inputEl.closest(
+          '[data-slot="dialog-content"]',
+        ) as HTMLElement | null;
+
+        if (!dc) {
+          // ─ Fallback no-modal: lift de la raíz de React ─
+          // Sin modal, no hay caja que levantar. Probamos primero scroll natural
+          // (página con suficiente contenido), y si no alcanza levantamos #root
+          // vía transform. El teclado vive en un portal a body FUERA de #root,
+          // así que no se mueve.
+          const inputRect = inputEl.getBoundingClientRect();
+          const overlap = inputRect.bottom - desiredBottom;
+          if (overlap <= 0) return;
+
+          const scrollable = findScrollableAncestor(inputEl);
+          const scroller: HTMLElement | Window =
+            scrollable ?? window;
+          const beforeScroll =
+            scroller === window
+              ? window.scrollY
+              : (scroller as HTMLElement).scrollTop;
+          const maxScroll =
+            scroller === window
+              ? document.documentElement.scrollHeight - window.innerHeight
+              : (scroller as HTMLElement).scrollHeight -
+                (scroller as HTMLElement).clientHeight;
+          const desiredScrollTop = Math.min(beforeScroll + overlap, maxScroll);
+          const actualScrollDelta = desiredScrollTop - beforeScroll;
+
+          if (actualScrollDelta >= overlap - 1) {
+            // El scroll natural alcanza para destapar el input.
+            scroller.scrollTo({ top: desiredScrollTop, behavior: 'smooth' });
+            return;
           }
-          scrollableRef.current = scrollable;
-          originalPaddingRef.current = scrollable.style.paddingBottom;
-          scrollable.style.paddingBottom = `${keyboardHeight}px`;
+
+          // Scroll insuficiente — levantar #root con transform.
+          // Hacemos scroll del MÁXIMO posible primero (si hay algo) y
+          // levantamos la diferencia restante.
+          if (actualScrollDelta > 0) {
+            scroller.scrollTo({ top: desiredScrollTop, behavior: 'smooth' });
+          }
+          const remainingOverlap = overlap - Math.max(0, actualScrollDelta);
+
+          // Levantar el `<main>` (área de contenido de página), NO #root.
+          // El sidebar es position:fixed dentro de #root; si transformamos #root
+          // el sidebar también se mueve y aparece glitchy. Levantando solo
+          // <main> el sidebar queda intacto.
+          const liftTarget =
+            (inputEl.closest('main') as HTMLElement | null) ??
+            document.getElementById('root');
+          if (!liftTarget) return;
+
+          if (!pageLiftRef.current) {
+            pageLiftRef.current = {
+              el: liftTarget,
+              lift: 0,
+              originalTransform: liftTarget.style.transform,
+              originalTransition: liftTarget.style.transition,
+            };
+          }
+
+          const newLift = Math.max(0, pageLiftRef.current.lift + remainingOverlap);
+          pageLiftRef.current.lift = newLift;
+
+          liftTarget.style.transition = 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)';
+          liftTarget.style.transform = newLift > 0 ? `translateY(-${newLift}px)` : '';
+          return;
         }
 
-        // Scroll del input para que quede visible arriba del teclado
-        requestAnimationFrame(() => {
-          const inputRect = inputEl.getBoundingClientRect();
-          const keyboardTop = keyboardEl.getBoundingClientRect().top;
+        // Si cambiamos a OTRO DialogContent (modal distinto), restaurar el anterior.
+        if (dialogLiftRef.current && dialogLiftRef.current.el !== dc) {
+          restoreDialogLift();
+        }
 
-          if (inputRect.bottom > keyboardTop - 16) {
-            const overlap = inputRect.bottom - keyboardTop + 16;
-            if (scrollable) {
-              scrollable.scrollBy({ top: overlap, behavior: 'smooth' });
-            }
-          }
-        });
+        // Inicializar estado de lift si es la primera vez con este modal.
+        if (!dialogLiftRef.current) {
+          dialogLiftRef.current = {
+            el: dc,
+            lift: 0,
+            originalTransform: dc.style.transform,
+            originalTransition: dc.style.transition,
+          };
+        }
+
+        // Calcular el lift adicional necesario.
+        // inputRect.bottom refleja la posición ACTUAL del input (con cualquier
+        // lift previo ya aplicado). Si el input está abajo del desiredBottom,
+        // overlap > 0 y debemos levantar más. Si está arriba, overlap < 0 y
+        // podemos bajar el modal (reducir lift).
+        const inputRect = inputEl.getBoundingClientRect();
+        const overlap = inputRect.bottom - desiredBottom;
+        const newLift = Math.max(0, dialogLiftRef.current.lift + overlap);
+
+        dialogLiftRef.current.lift = newLift;
+
+        // Aplicar el lift via transform. Conservamos el translate(-50%) horizontal
+        // que Radix usa para centrar el modal. La traducción vertical pasa de -50%
+        // (centrado) a calc(-50% - Npx) (centrado + lift hacia arriba).
+        //
+        // Si newLift es 0, limpiar el transform inline para que Tailwind retome
+        // el centrado vía sus clases translate-x-[-50%] translate-y-[-50%].
+        dc.style.transition = 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)';
+        dc.style.transform =
+          newLift > 0
+            ? `translate(-50%, calc(-50% - ${newLift}px))`
+            : '';
       }, 350);
     },
-    [],
+    [restoreDialogLift],
   );
 
   /**
@@ -182,14 +353,17 @@ export function KeyboardProvider({ children }: { children: React.ReactNode }) {
   const closeKeyboard = useCallback(() => {
     setIsOpen(false);
     activeInputRef.current?.current?.blur();
+    activeInputRef.current = null;
 
-    // Restaurar padding original del contenedor scrollable
-    if (scrollableRef.current) {
-      scrollableRef.current.style.paddingBottom = originalPaddingRef.current;
-      scrollableRef.current = null;
-      originalPaddingRef.current = '';
+    if (pendingTimerRef.current !== null) {
+      clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = null;
     }
-  }, []);
+
+    // Restaurar tanto el DialogContent como el wrapper de página (animados).
+    restoreDialogLift();
+    restorePageLift();
+  }, [restoreDialogLift, restorePageLift]);
 
   /**
    * Dos listeners globales que se activan mientras el teclado está abierto:

@@ -115,7 +115,7 @@ export function ProductFormModal({ open, onClose, product, onSave, onDelete }: P
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                   className="min-h-[40px]"
-                />
+                  />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">Subcategoría</label>
@@ -123,7 +123,7 @@ export function ProductFormModal({ open, onClose, product, onSave, onDelete }: P
                   value={formData.subcategory}
                   onChange={(e) => setFormData(prev => ({ ...prev, subcategory: e.target.value }))}
                   className="min-h-[40px]"
-                />
+                  />
               </div>
             </div>
 
@@ -224,7 +224,7 @@ export function ProductFormModal({ open, onClose, product, onSave, onDelete }: P
                   value={formData.minStock}
                   onChange={(e) => setFormData(prev => ({ ...prev, minStock: Number(e.target.value) }))}
                   className="min-h-[40px]"
-                />
+                  />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -236,7 +236,7 @@ export function ProductFormModal({ open, onClose, product, onSave, onDelete }: P
                   value={formData.maxStock}
                   onChange={(e) => setFormData(prev => ({ ...prev, maxStock: Number(e.target.value) }))}
                   className="min-h-[40px]"
-                />
+                  />
               </div>
             </div>
 

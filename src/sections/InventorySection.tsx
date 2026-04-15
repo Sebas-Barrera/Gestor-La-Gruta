@@ -39,10 +39,10 @@ import {
 } from "@/components/shared/InventorySort";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInventory } from "@/contexts/InventoryContext";
+import { useBarManagement } from "@/hooks/useBarManagement";
 import { useGlobalBarcodeScanner } from "@/hooks/useGlobalBarcodeScanner";
 import { useGlobalScaleDetector } from "@/hooks/useGlobalScaleDetector";
 import { toast } from "sonner";
-import { bars } from "@/data/mockData";
 import type {
   Product,
   ProductBarcode,
@@ -104,9 +104,10 @@ export function InventorySection() {
     adjustStock,
     confirmBatchReception,
   } = useInventory();
+  const { bars } = useBarManagement();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [activeBarId, setActiveBarId] = useState("1");
+  const [activeBarId, setActiveBarId] = useState<string>("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddMode, setIsAddMode] = useState(false);
@@ -241,12 +242,24 @@ export function InventorySection() {
   const activeBar = bars.find((b) => b.id === activeBarId) || bars[0];
   const adminName = `Admin ${currentUser?.name || ""}`;
 
+  // Seleccionar el primer almacén real cuando termine de cargar la lista
+  useEffect(() => {
+    if (!activeBarId && bars.length > 0) {
+      setActiveBarId(bars[0].id);
+    }
+  }, [bars, activeBarId]);
+
   // Productos del bar activo
   const barProducts = allProducts.filter((p) => p.barId === activeBarId);
 
-  // Sincronizar selectedProduct cuando cambian los productos (ej: stock update)
+  // Sincronizar selectedProduct cuando cambian los productos o el bar activo
   useEffect(() => {
     if (selectedProduct) {
+      // Si el producto seleccionado no pertenece al bar activo, resetear
+      if (selectedProduct.barId !== activeBarId) {
+        setSelectedProduct(barProducts.length > 0 ? barProducts[0] : null);
+        return;
+      }
       const updated = allProducts.find((p) => p.id === selectedProduct.id);
       if (updated && updated.stock !== selectedProduct.stock) {
         setSelectedProduct(updated);
@@ -254,7 +267,17 @@ export function InventorySection() {
     } else if (barProducts.length > 0) {
       setSelectedProduct(barProducts[0]);
     }
-  }, [allProducts, selectedProduct, barProducts]);
+  }, [allProducts, selectedProduct, barProducts, activeBarId]);
+
+  // Esperar a que carguen los almacenes desde Supabase antes de renderizar
+  // (debe ir DESPUÉS de todos los hooks para no romper el orden de React)
+  if (!activeBar) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        Cargando almacenes…
+      </div>
+    );
+  }
 
   // Pipeline: búsqueda → filtros → ordenamiento
   const searchedProducts = barProducts.filter(
@@ -951,6 +974,7 @@ export function InventorySection() {
       {/* Modal: Ajustar Stock */}
       {selectedProduct && (
         <StockAdjustmentModal
+          key={`stock-${selectedProduct.id}`}
           open={showStockAdjust}
           onClose={() => {
             setShowStockAdjust(false);
@@ -965,6 +989,7 @@ export function InventorySection() {
       {/* Modal: Editar Producto */}
       {selectedProduct && (
         <ProductFormModal
+          key={`edit-${selectedProduct.id}`}
           open={showEditProduct}
           onClose={() => setShowEditProduct(false)}
           product={selectedProduct}

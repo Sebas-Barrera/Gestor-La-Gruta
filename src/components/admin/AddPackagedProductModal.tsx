@@ -176,7 +176,6 @@ export function AddPackagedProductModal({
     if (!form.subcategory.trim())
       errs.subcategory = "La subcategoría es obligatoria";
     if (!form.supplier.trim()) errs.supplier = "El proveedor es obligatorio";
-    if (form.price <= 0) errs.price = "El precio debe ser mayor a 0";
     if (form.minStock < 0)
       errs.minStock = "El stock mínimo no puede ser negativo";
     if (form.maxStock <= 0)
@@ -446,14 +445,14 @@ export function AddPackagedProductModal({
 
             {/* Precio + Paquetes a Ingresar */}
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Precio (por unidad individual)" required error={errors.price}>
+              <FormField label="Precio (por unidad individual)" error={errors.price}>
                 <TouchInput
                   type="number"
                   value={form.price || ""}
                   onChange={(e) => updateField("price", Number(e.target.value))}
                   placeholder="0.00"
                   className="min-h-[44px]"
-                />
+                  />
               </FormField>
               <FormField label="Paquetes a Ingresar">
                 <TouchInput
@@ -462,7 +461,7 @@ export function AddPackagedProductModal({
                   onChange={(e) => updateField("stock", Number(e.target.value))}
                   placeholder="0"
                   className="min-h-[44px]"
-                />
+                  />
               </FormField>
             </div>
 
@@ -477,7 +476,7 @@ export function AddPackagedProductModal({
                   }
                   placeholder="10"
                   className="min-h-[44px]"
-                />
+                  />
               </FormField>
               <FormField label="Stock Máximo" required error={errors.maxStock}>
                 <TouchInput
@@ -488,7 +487,7 @@ export function AddPackagedProductModal({
                   }
                   placeholder="100"
                   className="min-h-[44px]"
-                />
+                  />
               </FormField>
             </div>
 
